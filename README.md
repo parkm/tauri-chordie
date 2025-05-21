@@ -1,6 +1,8 @@
-# Tauri + React + Typescript
+# tauri-chordie
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+`bun install`
+
+`bun tauri dev`
 
 ## Recommended IDE Setup
 
