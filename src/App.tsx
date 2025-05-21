@@ -10,49 +10,51 @@ interface MidiDevice {
   name: string;
 }
 
-// Simple mapping for note numbers to names (enharmonic equivalents are not handled, focuses on sharps)
-const NOTE_NAMES: { [key: number]: string } = {
-  0: "C", 1: "C#", 2: "D", 3: "D#", 4: "E", 5: "F",
-  6: "F#", 7: "G", 8: "G#", 9: "A", 10: "A#", 11: "B",
-};
-
-function getNoteName(noteNumber: number): string {
-  const octave = Math.floor(noteNumber / 12) - 1;
-  const note = NOTE_NAMES[noteNumber % 12];
-  return note ? `${note}${octave}` : `Note ${noteNumber}`;
-}
-
 function App() {
   const [midiDevices, setMidiDevices] = useState<MidiDevice[]>([]);
   const [selectedDeviceIndex, setSelectedDeviceIndex] = useState<number | null>(
     null
   );
   const [heldNotes, setHeldNotes] = useState<number[]>([]);
-  const [detectedChord, setDetectedChord] = useState<string>("");
+  const [detectedChordString, setDetectedChordString] = useState<string>("");
   const [isDeviceSelectorOpen, setIsDeviceSelectorOpen] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchMidiDevices() {
       try {
         const devices = await invoke<MidiDevice[]>("get_midi_devices");
         setMidiDevices(devices);
-      } catch (error) {
-        console.error("Failed to fetch MIDI devices:", error);
-        setMidiDevices([]); // Set to empty array on error
+        if (devices.length === 0) {
+          setError("No MIDI devices found. Please connect a device and refresh.");
+        } else {
+          setError(null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch MIDI devices:", err);
+        setMidiDevices([]);
+        setError("Failed to load MIDI devices. Is the backend running?");
       }
     }
     fetchMidiDevices();
   }, []);
 
   async function handleDeviceClick(index: number) {
+    if (selectedDeviceIndex === index) {
+      return;
+    }
     setSelectedDeviceIndex(index);
-    setHeldNotes([]); // Clear previous notes when changing device
-    setIsDeviceSelectorOpen(false); // Collapse after selection
+    setHeldNotes([]);
+    setDetectedChordString("");
+    setIsDeviceSelectorOpen(false);
+    setError(null);
     try {
       await invoke("listen_to_midi_device", { portIndex: index });
       console.log(`Started listening to device index: ${index}`);
-    } catch (error) {
-      console.error(`Failed to listen to MIDI device index ${index}:`, error);
+    } catch (err) {
+      console.error(`Failed to listen to MIDI device index ${index}:`, err);
+      setError(`Failed to connect to ${midiDevices.find(d => d.index === index)?.name || `device ${index}`}.`);
+      setSelectedDeviceIndex(null);
     }
   }
 
@@ -62,18 +64,17 @@ function App() {
     if (selectedDeviceIndex !== null) {
       const setupListener = async () => {
         try {
-          // Listen for 'midi_held_notes' and expect a number[] payload
           unlisten = await listen<number[]>("midi_held_notes", (event) => {
-            console.log("Held Notes Updated:", event.payload);
-            const currentNotes = event.payload.sort((a,b) => a - b);
-            setHeldNotes(currentNotes); // Update state with the array of note numbers, sorted
-            setDetectedChord(detectChord(currentNotes)); // Detect and set chord
+            const currentNotes = event.payload.sort((a, b) => a - b);
+            setHeldNotes(currentNotes);
+            setDetectedChordString(detectChord(currentNotes));
           });
-        } catch (error) {
+        } catch (err) {
           console.error(
             `Failed to set up MIDI held notes listener for device index ${selectedDeviceIndex}:`,
-            error
+            err
           );
+          setError("Error receiving MIDI data.");
         }
       };
       setupListener();
@@ -82,8 +83,6 @@ function App() {
     return () => {
       if (unlisten) {
         unlisten();
-        // Optional: send a command to backend to explicitly stop listening on this port if needed
-        // or clear held notes on the backend for this connection if it doesn't reset automatically.
         console.log(
           `Stopped listening for MIDI held notes from device index: ${selectedDeviceIndex}`
         );
@@ -91,55 +90,67 @@ function App() {
     };
   }, [selectedDeviceIndex]);
 
-  return (
-    <main className="container">
-      <header className="app-header">
-        <h1>Tauri Chordie</h1>
-      </header>
-      <section className="app-section midi-devices-section">
-        <div className="midi-selector-header">
-          <h2>MIDI Devices</h2>
-          {selectedDeviceIndex !== null && (
-            <button
-              onClick={() => setIsDeviceSelectorOpen(!isDeviceSelectorOpen)}
-              className="toggle-device-selector-btn"
-              aria-expanded={isDeviceSelectorOpen}
-            >
-              {isDeviceSelectorOpen ? "Hide Devices" : "Show Devices"}
-            </button>
-          )}
-        </div>
-        {(isDeviceSelectorOpen || selectedDeviceIndex === null) && (
-          midiDevices.length > 0 ? (
-            <ul className="midi-device-list">
-              {midiDevices.map((device) => (
-                <li
-                  key={device.index}
-                  onClick={() => handleDeviceClick(device.index)}
-                  className={selectedDeviceIndex === device.index ? "selected-device" : ""}
-                >
-                  {device.name} (Port: {device.index})
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="no-devices-message">No MIDI devices found or failed to load. Please ensure a MIDI device is connected.</p>
-          )
-        )}
-      </section>
+  const getSelectedDeviceName = () => {
+    if (selectedDeviceIndex === null) return "Select MIDI Device";
+    const device = midiDevices.find(d => d.index === selectedDeviceIndex);
+    return device ? device.name : `Device ${selectedDeviceIndex}`;
+  };
 
-      {selectedDeviceIndex !== null && (
-        <section className="app-section staff-visualization-section">
-          <h2>Live Note Display</h2>
-          <StaffDisplay heldNotes={heldNotes} />
-          {detectedChord && (
-            <div className="detected-chord-display">
-              <h3>Detected Chord: {detectedChord}</h3>
+  return (
+    <div className="app-container">
+      <header className="app-header">
+        <h1>tauri-chordie</h1>
+        <div className="midi-selector-container">
+          <button
+            onClick={() => setIsDeviceSelectorOpen(!isDeviceSelectorOpen)}
+            className={`midi-selector-toggle ${isDeviceSelectorOpen ? 'active' : ''}`}
+            aria-expanded={isDeviceSelectorOpen}
+            aria-controls="midi-device-list-popup"
+          >
+            {getSelectedDeviceName()}
+          </button>
+          {isDeviceSelectorOpen && (
+            <div id="midi-device-list-popup" className="midi-device-list-popup">
+              {midiDevices.length > 0 ? (
+                <ul>
+                  {midiDevices.map((device) => (
+                    <li
+                      key={device.index}
+                      onClick={() => handleDeviceClick(device.index)}
+                      className={selectedDeviceIndex === device.index ? "selected-device" : ""}
+                      role="option"
+                      aria-selected={selectedDeviceIndex === device.index}
+                    >
+                      {device.name}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="no-devices-message-popup">No MIDI devices found</p>
+              )}
             </div>
           )}
-        </section>
-      )}
-    </main>
+        </div>
+      </header>
+
+      <main className="main-content">
+        {error && <p className="message error-message">{error}</p>}
+        {selectedDeviceIndex === null && !error && midiDevices.length > 0 && (
+           <p className="message info-message">Please select a MIDI device to start</p>
+        )}
+
+        <div className="staff-and-chord-container">
+          <div className="staff-display-wrapper">
+            <StaffDisplay heldNotes={heldNotes} />
+          </div>
+          <div className="detected-chord-display-wrapper">
+            <p className={`detected-chord-text ${detectedChordString ? 'visible' : ''}`}>
+              {detectedChordString || ''}
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
 

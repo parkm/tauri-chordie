@@ -6,84 +6,12 @@ const NOTE_NAMES: { [key: number]: string } = {
   6: "F#", 7: "G", 8: "G#", 9: "A", 10: "A#", 11: "B",
 };
 
-// Function to get note name without octave for pitch class comparisons
-function getPitchClassName(noteNumber: number): string {
-  const pc = noteNumber % 12;
-  return NOTE_NAMES[pc] || `UnknownPC(${pc})`;
-}
-
 // Function to get note name with octave
 function getNoteNameWithOctave(noteNumber: number): string {
   const octave = Math.floor(noteNumber / 12) - 1;
   const note = NOTE_NAMES[noteNumber % 12];
   return note ? `${note}${octave}` : `N${noteNumber}`;
 }
-
-// Intervals are relative to the root in semitones.
-// The order of intervals in the array matters for matching.
-// More specific chords (more notes) should generally be listed before less specific ones
-// to ensure they are matched correctly if they share a common subset of intervals.
-const CHORD_DEFINITIONS: { [type: string]: { intervals: number[], nameSuffix: string, quality: string } } = {
-  // Sevenths and extended
-  MAJOR_SEVENTH: { intervals: [0, 4, 7, 11], nameSuffix: "maj7", quality: "maj7" },
-  MINOR_SEVENTH: { intervals: [0, 3, 7, 10], nameSuffix: "m7", quality: "m7" },
-  DOMINANT_SEVENTH: { intervals: [0, 4, 7, 10], nameSuffix: "7", quality: "7" },
-  DIMINISHED_SEVENTH: { intervals: [0, 3, 6, 9], nameSuffix: "dim7", quality: "dim7" }, // o7
-  HALF_DIMINISHED_SEVENTH: { intervals: [0, 3, 6, 10], nameSuffix: "m7b5", quality: "m7b5" }, // ø7
-  AUGMENTED_MAJOR_SEVENTH: { intervals: [0, 4, 8, 11], nameSuffix: "maj7#5", quality: "maj7#5" },
-  AUGMENTED_SEVENTH: { intervals: [0, 4, 8, 10], nameSuffix: "7#5", quality: "7#5" },
-  SEVENTH_FLAT_FIVE: { intervals: [0, 4, 6, 10], nameSuffix: "7b5", quality: "7b5"},
-  MINOR_MAJOR_SEVENTH: { intervals: [0, 3, 7, 11], nameSuffix: "m(maj7)", quality: "m(maj7)"},
-
-  // Sixths
-  MAJOR_SIXTH: { intervals: [0, 4, 7, 9], nameSuffix: "6", quality: "6" },
-  MINOR_SIXTH: { intervals: [0, 3, 7, 9], nameSuffix: "m6", quality: "m6" },
-
-  // Triads
-  MAJOR_TRIAD: { intervals: [0, 4, 7], nameSuffix: "", quality: "M" },
-  MINOR_TRIAD: { intervals: [0, 3, 7], nameSuffix: "m", quality: "m" },
-  AUGMENTED_TRIAD: { intervals: [0, 4, 8], nameSuffix: "aug", quality: "aug" },
-  DIMINISHED_TRIAD: { intervals: [0, 3, 6], nameSuffix: "dim", quality: "dim" },
-
-  // Suspended and other
-  SUS4_TRIAD: { intervals: [0, 5, 7], nameSuffix: "sus4", quality: "sus4" },
-  SUS2_TRIAD: { intervals: [0, 2, 7], nameSuffix: "sus2", quality: "sus2" },
-  SEVENTH_SUS4: { intervals: [0, 5, 7, 10], nameSuffix: "7sus4", quality: "7sus4"},
-
-  // Extended chords (basic versions, can be expanded with alterations)
-  // For simplicity, these check for the presence of the extension *and* the 7th.
-  // More advanced logic could handle "add9" without a 7th, or implied 7ths.
-  MAJOR_NINTH: { intervals: [0, 4, 7, 11, 2], nameSuffix: "maj9", quality: "maj9"}, // 14 becomes 2 (octave)
-  MINOR_NINTH: { intervals: [0, 3, 7, 10, 2], nameSuffix: "m9", quality: "m9"},
-  DOMINANT_NINTH: { intervals: [0, 4, 7, 10, 2], nameSuffix: "9", quality: "9"},
-
-  MAJOR_ELEVENTH: { intervals: [0, 4, 7, 11, 2, 5], nameSuffix: "maj11", quality: "maj11"}, // 14, 17 -> 2, 5
-  MINOR_ELEVENTH: { intervals: [0, 3, 7, 10, 2, 5], nameSuffix: "m11", quality: "m11"},
-  DOMINANT_ELEVENTH: { intervals: [0, 4, 7, 10, 2, 5], nameSuffix: "11", quality: "11"}, // Often #11 or implied notes
-
-  MAJOR_THIRTEENTH: { intervals: [0, 4, 7, 11, 2, 5, 9], nameSuffix: "maj13", quality: "maj13"}, // 14, 17, 21 -> 2, 5, 9
-  MINOR_THIRTEENTH: { intervals: [0, 3, 7, 10, 2, 5, 9], nameSuffix: "m13", quality: "m13"},
-  DOMINANT_THIRTEENTH: { intervals: [0, 4, 7, 10, 2, 5, 9], nameSuffix: "13", quality: "13"},
-
-  // Add more altered dominant chords etc. as needed
-  // Example: 7#9
-  DOMINANT_SEVENTH_SHARP_NINE: { intervals: [0, 4, 7, 10, 3], nameSuffix: "7#9", quality: "7#9" }, // 15 becomes 3
-  DOMINANT_SEVENTH_FLAT_NINE: { intervals: [0, 4, 7, 10, 1], nameSuffix: "7b9", quality: "7b9" }, // 13 becomes 1
-
-  // Power chord (root and fifth)
-  POWER_CHORD: { intervals: [0, 7], nameSuffix: "5", quality: "5"},
-};
-
-// Sort definitions by number of intervals descending, then by suffix length descending
-// This helps ensure more specific chords (e.g., Cmaj7) are matched before less specific ones (e.g., C)
-// if the less specific one is a subset of the notes of the more specific one when considering only pitch classes.
-const SORTED_CHORD_DEFINITIONS = Object.entries(CHORD_DEFINITIONS)
-  .sort(([keyA, valA], [keyB, valB]) => {
-    const intervalDiff = valB.intervals.length - valA.intervals.length;
-    if (intervalDiff !== 0) return intervalDiff;
-    return valB.nameSuffix.length - valA.nameSuffix.length; // Prefer longer (more specific) suffixes
-  })
-  .map(([key, value]) => ({ id: key, ...value }));
 
 // --- Chord Definitions ---
 
@@ -241,11 +169,6 @@ export function detectChord(midiNotes: number[]): string {
   const extensionsStrings: string[] = [];
   if (remainingPitchClasses.size > 0) {
     const sortedRemainingPc = Array.from(remainingPitchClasses).sort((a,b) => a-b);
-
-    // Special check for natural 11th (interval 5) if base is major or dominant
-    // Only add "11" if it's a natural 11th and the chord context allows it (e.g. minor, or sus)
-    // For major/dominant, prefer #11 if interval 6 is present.
-    const isMajorOrDominantBase = bestBaseChordMatch.suffix.includes("maj") || (!bestBaseChordMatch.suffix.includes("m") && !bestBaseChordMatch.suffix.includes("dim") && !bestBaseChordMatch.suffix.includes("sus"));
 
     for (const pc of sortedRemainingPc) {
       const intervalFromRoot = (pc - bestBaseChordMatch.rootPc + 12) % 12;
