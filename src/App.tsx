@@ -20,6 +20,7 @@ function App() {
   const [detectedChordString, setDetectedChordString] = useState<string>("");
   const [isDeviceSelectorOpen, setIsDeviceSelectorOpen] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [enforceRootNote, setEnforceRootNote] = useState<boolean>(false);
 
   useEffect(() => {
     async function fetchMidiDevices() {
@@ -68,7 +69,7 @@ function App() {
           unlisten = await listen<number[]>("midi_held_notes", (event) => {
             const currentNotes = event.payload.sort((a, b) => a - b);
             setHeldNotes(currentNotes);
-            setDetectedChordString(detectChord(currentNotes));
+            setDetectedChordString(detectChord(currentNotes, enforceRootNote));
           });
         } catch (err) {
           console.error(
@@ -89,7 +90,7 @@ function App() {
         );
       }
     };
-  }, [selectedDeviceIndex]);
+  }, [selectedDeviceIndex, enforceRootNote]);
 
   const getSelectedDeviceName = () => {
     if (selectedDeviceIndex === null) return "Select MIDI Device";
@@ -101,36 +102,48 @@ function App() {
     <div className="app-container">
       <header className="app-header">
         <h1>tauri-chordie</h1>
-        <div className="midi-selector-container">
-          <button
-            onClick={() => setIsDeviceSelectorOpen(!isDeviceSelectorOpen)}
-            className={`midi-selector-toggle ${isDeviceSelectorOpen ? 'active' : ''}`}
-            aria-expanded={isDeviceSelectorOpen}
-            aria-controls="midi-device-list-popup"
-          >
-            {getSelectedDeviceName()}
-          </button>
-          {isDeviceSelectorOpen && (
-            <div id="midi-device-list-popup" className="midi-device-list-popup">
-              {midiDevices.length > 0 ? (
-                <ul>
-                  {midiDevices.map((device) => (
-                    <li
-                      key={device.index}
-                      onClick={() => handleDeviceClick(device.index)}
-                      className={selectedDeviceIndex === device.index ? "selected-device" : ""}
-                      role="option"
-                      aria-selected={selectedDeviceIndex === device.index}
-                    >
-                      {device.name}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="no-devices-message-popup">No MIDI devices found</p>
-              )}
-            </div>
-          )}
+        <div className="header-controls">
+          <div className="root-enforcement-toggle">
+            <label>
+              <input
+                type="checkbox"
+                checked={enforceRootNote}
+                onChange={(e) => setEnforceRootNote(e.target.checked)}
+              />
+              Enforce Root Note
+            </label>
+          </div>
+          <div className="midi-selector-container">
+            <button
+              onClick={() => setIsDeviceSelectorOpen(!isDeviceSelectorOpen)}
+              className={`midi-selector-toggle ${isDeviceSelectorOpen ? 'active' : ''}`}
+              aria-expanded={isDeviceSelectorOpen}
+              aria-controls="midi-device-list-popup"
+            >
+              {getSelectedDeviceName()}
+            </button>
+            {isDeviceSelectorOpen && (
+              <div id="midi-device-list-popup" className="midi-device-list-popup">
+                {midiDevices.length > 0 ? (
+                  <ul>
+                    {midiDevices.map((device) => (
+                      <li
+                        key={device.index}
+                        onClick={() => handleDeviceClick(device.index)}
+                        className={selectedDeviceIndex === device.index ? "selected-device" : ""}
+                        role="option"
+                        aria-selected={selectedDeviceIndex === device.index}
+                      >
+                        {device.name}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="no-devices-message-popup">No MIDI devices found</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

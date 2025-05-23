@@ -13,234 +13,464 @@ function getNoteNameWithOctave(noteNumber: number): string {
   return note ? `${note}${octave}` : `N${noteNumber}`;
 }
 
-// --- Chord Definitions ---
+// --- ADVANCED CHORD DETECTION SYSTEM ---
 
-// Base chord qualities: Intervals relative to the root.
-// Sorted by number of notes (desc) to prioritize fuller base chords.
-const BASE_CHORD_QUALITIES: { [name: string]: { intervals: number[], suffix: string } } = {
-  MAJOR_SEVENTH: { intervals: [0, 4, 7, 11], suffix: "maj7" },
-  DOMINANT_SEVENTH: { intervals: [0, 4, 7, 10], suffix: "7" },
-  MINOR_SEVENTH: { intervals: [0, 3, 7, 10], suffix: "m7" },
-  MINOR_MAJOR_SEVENTH: { intervals: [0, 3, 7, 11], suffix: "m(maj7)" },
-  HALF_DIMINISHED_SEVENTH: { intervals: [0, 3, 6, 10], suffix: "m7b5" }, // ø7
-  DIMINISHED_SEVENTH: { intervals: [0, 3, 6, 9], suffix: "dim7" },     // o7
-  AUGMENTED_MAJOR_SEVENTH: { intervals: [0, 4, 8, 11], suffix: "maj7#5" },
-  AUGMENTED_SEVENTH: { intervals: [0, 4, 8, 10], suffix: "7#5" }, // +7
-  SEVENTH_FLAT_FIVE: { intervals: [0, 4, 6, 10], suffix: "7b5" },
-  SEVENTH_SUS4: { intervals: [0, 5, 7, 10], suffix: "7sus4" },
-  MAJOR_SIXTH: { intervals: [0, 4, 7, 9], suffix: "6" },
-  MINOR_SIXTH: { intervals: [0, 3, 7, 9], suffix: "m6" },
-
-  MAJOR_TRIAD: { intervals: [0, 4, 7], suffix: "" },
-  MINOR_TRIAD: { intervals: [0, 3, 7], suffix: "m" },
-  AUGMENTED_TRIAD: { intervals: [0, 4, 8], suffix: "aug" },
-  DIMINISHED_TRIAD: { intervals: [0, 3, 6], suffix: "dim" },
-  SUS4_TRIAD: { intervals: [0, 5, 7], suffix: "sus4" },
-  SUS2_TRIAD: { intervals: [0, 2, 7], suffix: "sus2" },
-
-  POWER_CHORD: { intervals: [0, 7], suffix: "5" }, // For two-note case
-};
-
-const SORTED_BASE_CHORD_QUALITIES = Object.values(BASE_CHORD_QUALITIES).sort(
-  (a, b) => b.intervals.length - a.intervals.length
-);
-
-// Extension and Alteration Definitions: Interval from root and its typical notation
-// Note: These are simplified. Some extensions imply others (e.g., 13th often implies 7th and 9th).
-// The logic will need to be smart about how these are added to the name.
-const EXTENSIONS_ALTERATIONS: { [interval: number]: string } = {
-  1: "b9",   // Minor 2nd / flat 9th
-  2: "9",    // Major 2nd / 9th
-  3: "#9",   // Augmented 2nd / sharp 9th
-  // 4: "3", // Major 3rd (part of base chord)
-  // 5: "4", // Perfect 4th (can be sus, or 11th)
-  6: "#11",  // Augmented 4th / sharp 11th (also b5 for base chord)
-  // 7: "5", // Perfect 5th (part of base chord)
-  8: "b13", // Augmented 5th / flat 13th (also #5 for base chord)
-  9: "13",   // Major 6th / 13th
-  // 10: "b7", // Minor 7th (part of base chord)
-  // 11: "maj7" // Major 7th (part of base chord)
-};
-
-// Specific handling for 11ths because a natural 11 clashes with major 3rd.
-// It's typically #11 or used in minor/dominant chords where 3rd is minor or can be omitted/altered.
-const NATURAL_ELEVENTH_INTERVAL = 5; // Perfect 4th
-
-// --- Chord Detection Logic ---
-
-interface DetectedBaseChord {
-  rootPc: number;
-  qualityName: string; // e.g. "MAJOR_SEVENTH"
-  suffix: string;
-  baseNotesPc: Set<number>; // Pitch classes forming the base chord
-  score: number; // Higher is better (e.g., number of notes matched)
+interface ChordDefinition {
+  intervals: number[];
+  symbol: string;
+  name: string;
+  priority: number;
+  requiresAll?: boolean; // If true, all intervals must be present
 }
 
-export function detectChord(midiNotes: number[]): string {
-  if (!midiNotes || midiNotes.length === 0) return "";
+// Comprehensive chord database with proper priorities
+const CHORD_DATABASE: ChordDefinition[] = [
+  // === TRIADS (Highest Priority) ===
+  { intervals: [0, 4, 7], symbol: "", name: "Major", priority: 1000, requiresAll: true },
+  { intervals: [0, 3, 7], symbol: "m", name: "Minor", priority: 1000, requiresAll: true },
+  { intervals: [0, 4, 8], symbol: "aug", name: "Augmented", priority: 1000, requiresAll: true },
+  { intervals: [0, 3, 6], symbol: "dim", name: "Diminished", priority: 1000, requiresAll: true },
+  { intervals: [0, 5, 7], symbol: "sus4", name: "Suspended 4th", priority: 950, requiresAll: true },
+  { intervals: [0, 2, 7], symbol: "sus2", name: "Suspended 2nd", priority: 950, requiresAll: true },
 
-  const sortedUniqueMidiNotes = [...new Set(midiNotes)].sort((a, b) => a - b);
+  // === SEVENTH CHORDS ===
+  { intervals: [0, 4, 7, 11], symbol: "maj7", name: "Major 7th", priority: 900, requiresAll: true },
+  { intervals: [0, 4, 7, 10], symbol: "7", name: "Dominant 7th", priority: 900, requiresAll: true },
+  { intervals: [0, 3, 7, 10], symbol: "m7", name: "Minor 7th", priority: 900, requiresAll: true },
+  { intervals: [0, 3, 7, 11], symbol: "m(maj7)", name: "Minor Major 7th", priority: 850, requiresAll: true },
+  { intervals: [0, 3, 6, 10], symbol: "m7b5", name: "Half Diminished", priority: 850, requiresAll: true },
+  { intervals: [0, 3, 6, 9], symbol: "dim7", name: "Diminished 7th", priority: 850, requiresAll: true },
+  { intervals: [0, 4, 8, 10], symbol: "aug7", name: "Augmented 7th", priority: 800, requiresAll: true },
+  { intervals: [0, 4, 8, 11], symbol: "maj7#5", name: "Major 7th Sharp 5", priority: 800, requiresAll: true },
+  { intervals: [0, 5, 7, 10], symbol: "7sus4", name: "7th Suspended 4th", priority: 750, requiresAll: true },
+  { intervals: [0, 2, 7, 10], symbol: "7sus2", name: "7th Suspended 2nd", priority: 750, requiresAll: true },
 
-  if (sortedUniqueMidiNotes.length === 1) {
-    return getNoteNameWithOctave(sortedUniqueMidiNotes[0]);
-  }
+  // === SIXTH CHORDS ===
+  { intervals: [0, 4, 7, 9], symbol: "6", name: "Major 6th", priority: 850, requiresAll: true },
+  { intervals: [0, 3, 7, 9], symbol: "m6", name: "Minor 6th", priority: 850, requiresAll: true },
+  { intervals: [0, 4, 7, 9, 2], symbol: "6/9", name: "6th Add 9", priority: 800, requiresAll: true },
+  { intervals: [0, 3, 7, 9, 2], symbol: "m6/9", name: "Minor 6th Add 9", priority: 800, requiresAll: true },
 
-  const inputPitchClasses = new Set(sortedUniqueMidiNotes.map(n => n % 12));
-  const sortedUniquePitchClasses = Array.from(inputPitchClasses).sort((a, b) => a - b);
+  // === NINTH CHORDS ===
+  { intervals: [0, 4, 7, 10, 2], symbol: "9", name: "Dominant 9th", priority: 700, requiresAll: false },
+  { intervals: [0, 4, 7, 11, 2], symbol: "maj9", name: "Major 9th", priority: 700, requiresAll: false },
+  { intervals: [0, 3, 7, 10, 2], symbol: "m9", name: "Minor 9th", priority: 700, requiresAll: false },
+  { intervals: [0, 3, 7, 11, 2], symbol: "m(maj9)", name: "Minor Major 9th", priority: 650, requiresAll: false },
+  { intervals: [0, 4, 7, 10, 1], symbol: "7b9", name: "7th Flat 9", priority: 650, requiresAll: false },
+  { intervals: [0, 4, 7, 10, 3], symbol: "7#9", name: "7th Sharp 9", priority: 650, requiresAll: false },
 
-  if (sortedUniquePitchClasses.length < 2) {
-    // Should be caught by sortedUniqueMidiNotes.length === 1, but as a safeguard
-    if (sortedUniquePitchClasses.length === 1) {
-      return getNoteNameWithOctave(sortedUniqueMidiNotes[0]);
-    }
-    return "Requires at least 2 unique pitch classes";
-  }
+  // === ELEVENTH CHORDS ===
+  { intervals: [0, 4, 7, 10, 2, 5], symbol: "11", name: "11th", priority: 600, requiresAll: false },
+  { intervals: [0, 3, 7, 10, 2, 5], symbol: "m11", name: "Minor 11th", priority: 600, requiresAll: false },
+  { intervals: [0, 4, 7, 10, 6], symbol: "7#11", name: "7th Sharp 11", priority: 580, requiresAll: false },
+  { intervals: [0, 4, 7, 11, 6], symbol: "maj7#11", name: "Major 7th Sharp 11", priority: 580, requiresAll: false },
 
-  let bestBaseChordMatch: DetectedBaseChord | null = null;
+  // === THIRTEENTH CHORDS ===
+  { intervals: [0, 4, 7, 10, 2, 9], symbol: "13", name: "13th", priority: 550, requiresAll: false },
+  { intervals: [0, 3, 7, 10, 2, 9], symbol: "m13", name: "Minor 13th", priority: 550, requiresAll: false },
+  { intervals: [0, 4, 7, 10, 8], symbol: "7b13", name: "7th Flat 13", priority: 530, requiresAll: false },
 
-  // 1. Find the best base chord
-  for (const potentialRootPc of sortedUniquePitchClasses) {
-    for (const quality of SORTED_BASE_CHORD_QUALITIES) {
-      const currentBaseNotesPc = new Set<number>();
-      currentBaseNotesPc.add(potentialRootPc); // Add the root
-      let allBaseNotesPresent = true;
+  // === ADD CHORDS ===
+  { intervals: [0, 4, 7, 2], symbol: "add9", name: "Add 9", priority: 500, requiresAll: true },
+  { intervals: [0, 3, 7, 2], symbol: "m(add9)", name: "Minor Add 9", priority: 500, requiresAll: true },
+  { intervals: [0, 4, 7, 5], symbol: "add11", name: "Add 11", priority: 450, requiresAll: true },
+  { intervals: [0, 4, 7, 6], symbol: "add#11", name: "Add Sharp 11", priority: 450, requiresAll: true },
 
-      for (let i = 1; i < quality.intervals.length; i++) { // Start from 1, as 0 is root
-        const intervalNotePc = (potentialRootPc + quality.intervals[i]) % 12;
-        if (inputPitchClasses.has(intervalNotePc)) {
-          currentBaseNotesPc.add(intervalNotePc);
-        } else {
-          allBaseNotesPresent = false;
-          break;
+  // === ALTERED CHORDS ===
+  { intervals: [0, 4, 6, 10], symbol: "7b5", name: "7th Flat 5", priority: 600, requiresAll: true },
+  { intervals: [0, 4, 8, 10], symbol: "7#5", name: "7th Sharp 5", priority: 600, requiresAll: true },
+  { intervals: [0, 3, 6, 10], symbol: "m7b5", name: "Minor 7th Flat 5", priority: 600, requiresAll: true },
+
+  // === POWER CHORD (Lowest Priority) ===
+  { intervals: [0, 7], symbol: "5", name: "Power Chord", priority: 100, requiresAll: true },
+];
+
+interface ChordMatch {
+  root: number;
+  chord: ChordDefinition;
+  matchedIntervals: number[];
+  coverage: number;
+  exactness: number;
+  score: number;
+}
+
+function analyzeChord(pitchClasses: Set<number>, enforceRootNote: boolean, lowestNote: number): ChordMatch[] {
+  const matches: ChordMatch[] = [];
+  const pcArray = Array.from(pitchClasses).sort((a, b) => a - b);
+
+  // Determine root candidates
+  const rootCandidates = enforceRootNote ? [lowestNote] : pcArray;
+
+  for (const root of rootCandidates) {
+    for (const chord of CHORD_DATABASE) {
+      const matchedIntervals: number[] = [];
+
+      // Check which intervals are present
+      for (const interval of chord.intervals) {
+        const noteClass = (root + interval) % 12;
+        if (pitchClasses.has(noteClass)) {
+          matchedIntervals.push(interval);
         }
       }
 
-      if (allBaseNotesPresent) {
-        // All notes for this quality (rooted at potentialRootPc) are in the input
-        // Score by number of notes in the base chord type
-        const score = quality.intervals.length;
-        if (!bestBaseChordMatch || score > bestBaseChordMatch.score) {
-          bestBaseChordMatch = {
-            rootPc: potentialRootPc,
-            qualityName: Object.keys(BASE_CHORD_QUALITIES).find(k => BASE_CHORD_QUALITIES[k] === quality) || "UnknownQuality",
-            suffix: quality.suffix,
-            baseNotesPc: currentBaseNotesPc,
-            score: score,
-          };
+      // Calculate coverage
+      const coverage = matchedIntervals.length / chord.intervals.length;
+
+      // Skip if coverage is too low
+      if (chord.requiresAll && coverage < 1.0) continue;
+      if (!chord.requiresAll && coverage < 0.6) continue;
+
+      // Calculate exactness (how well it fits without extra notes)
+      const extraNotes = pcArray.length - matchedIntervals.length;
+      const exactness = Math.max(0, 1 - (extraNotes * 0.2));
+
+      // Calculate final score
+      const score = (coverage * chord.priority * exactness);
+
+      matches.push({
+        root,
+        chord,
+        matchedIntervals,
+        coverage,
+        exactness,
+        score
+      });
+    }
+  }
+
+  // Sort by score (highest first)
+  matches.sort((a, b) => {
+    if (Math.abs(a.score - b.score) < 1) {
+      // If scores are very close, prefer higher coverage
+      if (Math.abs(a.coverage - b.coverage) < 0.1) {
+        // If coverage is also close, prefer higher priority
+        return b.chord.priority - a.chord.priority;
+      }
+      return b.coverage - a.coverage;
+    }
+    return b.score - a.score;
+  });
+
+  return matches;
+}
+
+function buildChordName(match: ChordMatch, allPitchClasses: Set<number>, bassNote: number): string {
+  const rootName = NOTE_NAMES[match.root];
+  let chordName = rootName + match.chord.symbol;
+
+  // Find unmatched notes for extensions
+  const matchedNotes = new Set<number>();
+  for (const interval of match.matchedIntervals) {
+    matchedNotes.add((match.root + interval) % 12);
+  }
+
+  const unmatchedNotes: number[] = [];
+  for (const pc of allPitchClasses) {
+    if (!matchedNotes.has(pc)) {
+      unmatchedNotes.push(pc);
+    }
+  }
+
+  // Add extensions for unmatched notes
+  if (unmatchedNotes.length > 0) {
+    const extensions: string[] = [];
+
+    for (const pc of unmatchedNotes) {
+      const interval = (pc - match.root + 12) % 12;
+      const extension = getExtensionSymbol(interval);
+      if (extension) {
+        extensions.push(extension);
+      }
+    }
+
+    if (extensions.length > 0) {
+      // Smart extension handling
+      if (extensions.includes("9") && match.chord.symbol.includes("7")) {
+        // Upgrade 7th to 9th chord
+        if (match.chord.symbol === "7") {
+          chordName = rootName + "9";
+        } else if (match.chord.symbol === "maj7") {
+          chordName = rootName + "maj9";
+        } else if (match.chord.symbol === "m7") {
+          chordName = rootName + "m9";
         }
-        // If score is the same, we could add tie-breaking logic (e.g. prefer lowest root note)
-        // For now, first one found with highest score (due to sorted qualities) wins for this root.
+        extensions.splice(extensions.indexOf("9"), 1);
+      }
+
+      if (extensions.length > 0) {
+        chordName += `(${extensions.join("")})`;
       }
     }
   }
 
-  // If after checking all roots, we still prefer the one found for an earlier root, that's fine.
-  // The outer loop (potentialRootPc) ensures we try all possibilities.
-
-  if (!bestBaseChordMatch) {
-    // Fallback for very sparse chords not matching any base triad/seventh
-    if (sortedUniquePitchClasses.length === 2) {
-        const interval = (sortedUniquePitchClasses[1] - sortedUniquePitchClasses[0] + 12) % 12;
-        if (interval === 7) { // Perfect fifth -> Power Chord
-            const rootName = NOTE_NAMES[sortedUniquePitchClasses[0]];
-            let chordName = `${rootName}5`;
-            const bassNotePc = sortedUniqueMidiNotes[0] % 12;
-            if (bassNotePc !== sortedUniquePitchClasses[0]) {
-                chordName += `/${NOTE_NAMES[bassNotePc]}`;
-            }
-            return chordName;
-        }
-    }
-    const noteNames = sortedUniqueMidiNotes.map(getNoteNameWithOctave);
-    return noteNames.length > 0 ? `Notes: ${noteNames.join(", ")}` : "Unknown Chord";
-  }
-
-  // 2. Identify extensions and alterations
-  const rootNoteName = NOTE_NAMES[bestBaseChordMatch.rootPc];
-  let chordName = `${rootNoteName}${bestBaseChordMatch.suffix}`;
-
-  const remainingPitchClasses = new Set<number>();
-  for (const pc of inputPitchClasses) {
-    if (!bestBaseChordMatch.baseNotesPc.has(pc)) {
-      remainingPitchClasses.add(pc);
-    }
-  }
-
-  const extensionsStrings: string[] = [];
-  if (remainingPitchClasses.size > 0) {
-    const sortedRemainingPc = Array.from(remainingPitchClasses).sort((a,b) => a-b);
-
-    for (const pc of sortedRemainingPc) {
-      const intervalFromRoot = (pc - bestBaseChordMatch.rootPc + 12) % 12;
-
-      if (intervalFromRoot === NATURAL_ELEVENTH_INTERVAL) { // Natural 11th (P4)
-        // Add "11" for minor, dominant (if not clashing too hard), or sus chords.
-        // Avoid for major chords unless it's specifically a "maj7(11)" or similar structure
-        // This logic is simplified; true "11" chords often omit the 3rd.
-        if (bestBaseChordMatch.suffix.includes("m") || bestBaseChordMatch.suffix.includes("sus") || bestBaseChordMatch.suffix.includes("7")) {
-          // Avoid adding "11" if "#11" (interval 6) is also present or will be added.
-          if (!remainingPitchClasses.has((bestBaseChordMatch.rootPc + 6) % 12) && !EXTENSIONS_ALTERATIONS[6]) {
-             extensionsStrings.push("11");
-          }
-        }
-        // If it's a major type chord, a natural 11th is usually part of a "add4" or complex sus, not a typical "maj11"
-        // Or it's an error/unusual voicing. We might list it as an "add4" or ignore if #11 is preferred.
-        // For now, we are cautious about adding natural "11" to major chords.
-        continue; // Handled, move to next remaining PC
-      }
-
-      if (EXTENSIONS_ALTERATIONS[intervalFromRoot]) {
-        extensionsStrings.push(EXTENSIONS_ALTERATIONS[intervalFromRoot]);
-      } else {
-        // Unhandled interval, could be an alteration of a base chord tone not yet defined
-        // e.g. if base is Cmaj7 (C E G B) and extra note is F# (interval 6 from C)
-        // and 6 is defined as #11. If 6 wasn't in EXTENSIONS_ALTERATIONS, it would be "other".
-        // For now, we'll just ignore "other" unmapped intervals relative to the root.
-      }
-    }
-  }
-
-  // Combine and sort extensions (b9, 9, #9, 11, #11, b13, 13)
-  // Sorting order for extensions: typically by number (9, 11, 13) and then alteration (b, natural, #)
-  const sortOrder: { [key: string]: number } = {
-    "b9": 1, "9": 2, "#9": 3,
-    "11": 4, "#11": 5, // natural 11 handled carefully
-    "b13": 6, "13": 7,
-    // alterations of base chord tones like b5, #5 are part of suffix
-  };
-
-  extensionsStrings.sort((a, b) => (sortOrder[a] || 99) - (sortOrder[b] || 99));
-
-  if (extensionsStrings.length > 0) {
-    // Logic to simplify chord names, e.g. C7 with "9" becomes C9, not C7(9)
-    // Cmaj7 with "9" becomes Cmaj9
-    // Cm7 with "9" becomes Cm9
-    // C7 with "b9" becomes C7(b9)
-    const baseIsSeventh = bestBaseChordMatch.suffix.endsWith("7") || bestBaseChordMatch.suffix.endsWith("6"); // or 6th
-
-    if (baseIsSeventh && extensionsStrings.includes("9") && !extensionsStrings.includes("b9") && !extensionsStrings.includes("#9")) {
-        if(bestBaseChordMatch.suffix === "7") chordName = rootNoteName + "9";
-        else if(bestBaseChordMatch.suffix === "maj7") chordName = rootNoteName + "maj9";
-        else if(bestBaseChordMatch.suffix === "m7") chordName = rootNoteName + "m9";
-        else chordName += `(${extensionsStrings.join("")})`; // fallback C6(9)
-        // Remove "9" as it's incorporated, keep other alterations like #11, 13
-        const nineIndex = extensionsStrings.indexOf("9");
-        if (nineIndex > -1) extensionsStrings.splice(nineIndex, 1);
-         if (extensionsStrings.length > 0) { // Add remaining (e.g. #11, 13)
-            chordName += `(${extensionsStrings.join("")})`;
-        }
-    } else if (extensionsStrings.length > 0) {
-         chordName += `(${extensionsStrings.join("")})`;
-    }
-  }
-
-
-  // 3. Add slash chord notation for inversion
-  const bassNoteMidi = sortedUniqueMidiNotes[0];
-  const bassNotePc = bassNoteMidi % 12;
-  if (bassNotePc !== bestBaseChordMatch.rootPc) {
-    chordName += `/${NOTE_NAMES[bassNotePc]}`;
+  // Add slash notation for bass note
+  if (bassNote !== match.root) {
+    const bassName = NOTE_NAMES[bassNote];
+    chordName += `/${bassName}`;
   }
 
   return chordName;
+}
+
+function getExtensionSymbol(interval: number): string | null {
+  const extensionMap: { [key: number]: string } = {
+    1: "b9",   // Minor 2nd
+    2: "9",    // Major 2nd / 9th
+    3: "#9",   // Augmented 2nd
+    5: "11",   // Perfect 4th / 11th
+    6: "#11",  // Tritone / #11
+    8: "b13",  // Minor 6th / b13
+    9: "13",   // Major 6th / 13th
+    10: "7",   // Minor 7th
+    11: "maj7" // Major 7th
+  };
+
+  return extensionMap[interval] || null;
+}
+
+function findOverlappingTriads(pitchClasses: Set<number>): string[] {
+  const triads: string[] = [];
+
+  // Check all possible triads
+  for (let root = 0; root < 12; root++) {
+    const rootName = NOTE_NAMES[root];
+
+    // Major triad
+    if (pitchClasses.has(root) &&
+        pitchClasses.has((root + 4) % 12) &&
+        pitchClasses.has((root + 7) % 12)) {
+      triads.push(rootName);
+    }
+
+    // Minor triad
+    if (pitchClasses.has(root) &&
+        pitchClasses.has((root + 3) % 12) &&
+        pitchClasses.has((root + 7) % 12)) {
+      triads.push(rootName + "m");
+    }
+
+    // Augmented triad
+    if (pitchClasses.has(root) &&
+        pitchClasses.has((root + 4) % 12) &&
+        pitchClasses.has((root + 8) % 12)) {
+      triads.push(rootName + "aug");
+    }
+
+    // Diminished triad
+    if (pitchClasses.has(root) &&
+        pitchClasses.has((root + 3) % 12) &&
+        pitchClasses.has((root + 6) % 12)) {
+      triads.push(rootName + "dim");
+    }
+  }
+
+  return triads;
+}
+
+function buildFromIntervals(pitchClasses: Set<number>): string {
+  const pcArray = Array.from(pitchClasses).sort((a, b) => a - b);
+  const root = pcArray[0];
+  const rootName = NOTE_NAMES[root];
+
+  // Calculate intervals from root
+  const intervals = pcArray.slice(1).map(pc => (pc - root + 12) % 12);
+
+  let quality = "";
+
+  // Determine basic triad quality
+  const hasMinor3 = intervals.includes(3);
+  const hasMajor3 = intervals.includes(4);
+  const hasPerfect5 = intervals.includes(7);
+  const hasAug5 = intervals.includes(8);
+  const hasDim5 = intervals.includes(6);
+
+  if (hasMinor3 && !hasMajor3) {
+    quality = "m";
+  } else if (!hasMinor3 && !hasMajor3) {
+    if (intervals.includes(5)) quality = "sus4";
+    else if (intervals.includes(2)) quality = "sus2";
+    else quality = "no3";
+  }
+
+  // Add fifth alterations
+  if (hasAug5 && !hasPerfect5) {
+    quality += "aug";
+  } else if (hasDim5 && !hasPerfect5) {
+    quality += "dim";
+  }
+
+  // Add seventh
+  if (intervals.includes(11)) {
+    quality += "maj7";
+  } else if (intervals.includes(10)) {
+    quality += "7";
+  }
+
+  // Add extensions
+  const extensions: string[] = [];
+  for (const interval of intervals) {
+    const ext = getExtensionSymbol(interval);
+    if (ext && !quality.includes(ext)) {
+      extensions.push(ext);
+    }
+  }
+
+  if (extensions.length > 0) {
+    quality += `(${extensions.join("")})`;
+  }
+
+  return rootName + quality;
+}
+
+function getIntervalName(interval: number): string {
+  const intervalNames: { [key: number]: string } = {
+    0: "R",     // Root
+    1: "b2",    // Minor 2nd
+    2: "2",     // Major 2nd
+    3: "b3",    // Minor 3rd
+    4: "3",     // Major 3rd
+    5: "4",     // Perfect 4th
+    6: "b5",    // Tritone/Diminished 5th
+    7: "5",     // Perfect 5th
+    8: "#5",    // Augmented 5th
+    9: "6",     // Major 6th
+    10: "b7",   // Minor 7th
+    11: "7"     // Major 7th
+  };
+
+  return intervalNames[interval] || `+${interval}`;
+}
+
+function findBestRoot(pitchClasses: Set<number>, enforceRootNote: boolean, lowestNote: number): number {
+  if (enforceRootNote) {
+    return lowestNote;
+  }
+
+  const pcArray = Array.from(pitchClasses).sort((a, b) => a - b);
+
+  // Try each note as root and score based on common intervals
+  let bestRoot = pcArray[0];
+  let bestScore = -1;
+
+  for (const root of pcArray) {
+    let score = 0;
+
+    for (const pc of pcArray) {
+      const interval = (pc - root + 12) % 12;
+
+      // Score based on how common/important the interval is
+      switch (interval) {
+        case 0: score += 10; break; // Root
+        case 4: score += 8; break;  // Major 3rd
+        case 3: score += 8; break;  // Minor 3rd
+        case 7: score += 9; break;  // Perfect 5th
+        case 10: score += 6; break; // Minor 7th
+        case 11: score += 6; break; // Major 7th
+        case 2: score += 4; break;  // Major 2nd
+        case 9: score += 4; break;  // Major 6th
+        case 5: score += 3; break;  // Perfect 4th
+        default: score += 1; break;
+      }
+    }
+
+    // Bonus for being the lowest note
+    if (root === lowestNote) {
+      score += 5;
+    }
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestRoot = root;
+    }
+  }
+
+  return bestRoot;
+}
+
+function buildIntervalAnalysis(pitchClasses: Set<number>, root: number): string {
+  const rootName = NOTE_NAMES[root];
+  const intervals: string[] = [];
+
+  const sortedPcs = Array.from(pitchClasses).sort((a, b) => a - b);
+
+  for (const pc of sortedPcs) {
+    const interval = (pc - root + 12) % 12;
+    intervals.push(getIntervalName(interval));
+  }
+
+  return `${rootName}(${intervals.join(" ")})`;
+}
+
+export function detectChord(midiNotes: number[], enforceRootNote: boolean = false): string {
+  if (!midiNotes || midiNotes.length === 0) return "";
+
+  const sortedNotes = [...new Set(midiNotes)].sort((a, b) => a - b);
+
+  // Single note - show just the note name without octave
+  if (sortedNotes.length === 1) {
+    const noteClass = sortedNotes[0] % 12;
+    return NOTE_NAMES[noteClass];
+  }
+
+  const pitchClasses = new Set(sortedNotes.map(n => n % 12));
+  const lowestNotePc = sortedNotes[0] % 12;
+
+  // Analyze for chord matches
+  const matches = analyzeChord(pitchClasses, enforceRootNote, lowestNotePc);
+
+  if (matches.length > 0) {
+    const bestMatch = matches[0];
+
+    // Use the best match if it's good enough
+    if (bestMatch.score > 500 || bestMatch.coverage >= 0.8) {
+      return buildChordName(bestMatch, pitchClasses, lowestNotePc);
+    }
+  }
+
+  // Fallback: try to find overlapping triads
+  const triads = findOverlappingTriads(pitchClasses);
+  if (triads.length >= 2) {
+    return `${triads[0]} + ${triads[1]}`;
+  }
+
+  if (triads.length === 1) {
+    // Only show single triad if it's a complete triad
+    const triad = triads[0];
+    const rootName = triad.replace(/[^A-G#]/g, '');
+    const quality = triad.replace(rootName, '');
+
+    // Check if we have a complete triad
+    let rootPc = -1;
+    for (let i = 0; i < 12; i++) {
+      if (NOTE_NAMES[i] === rootName) {
+        rootPc = i;
+        break;
+      }
+    }
+
+    if (rootPc !== -1) {
+      let expectedIntervals: number[];
+      if (quality === 'm') {
+        expectedIntervals = [0, 3, 7];
+      } else if (quality === 'aug') {
+        expectedIntervals = [0, 4, 8];
+      } else if (quality === 'dim') {
+        expectedIntervals = [0, 3, 6];
+      } else {
+        expectedIntervals = [0, 4, 7]; // major
+      }
+
+      const hasAllNotes = expectedIntervals.every(interval =>
+        pitchClasses.has((rootPc + interval) % 12)
+      );
+
+      if (hasAllNotes) {
+        return triad;
+      }
+    }
+  }
+
+  // ROBUST FALLBACK: Find best root and show all intervals
+  const bestRoot = findBestRoot(pitchClasses, enforceRootNote, lowestNotePc);
+  return buildIntervalAnalysis(pitchClasses, bestRoot);
 }

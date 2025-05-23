@@ -162,6 +162,34 @@ body {
 }
 
 /* MIDI device selector with unmistakable button appearance */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.root-enforcement-toggle {
+  display: flex;
+  align-items: center;
+}
+
+.root-enforcement-toggle label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--text-light);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.root-enforcement-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--secondary);
+  cursor: pointer;
+}
+
 .midi-selector-container {
   position: relative;
 }
@@ -504,11 +532,28 @@ body {
 
   .app-header h1 {
     font-size: 1.25rem;
+    width: 100%;
+    text-align: center;
+  }
+
+  .header-controls {
+    width: 100%;
+    flex-direction: column;
+    gap: var(--space-sm);
+    align-items: center;
+  }
+
+  .root-enforcement-toggle {
+    order: 1;
+  }
+
+  .midi-selector-container {
+    order: 2;
+    width: 100%;
   }
 
   .midi-selector-toggle {
     width: 100%;
-    margin-top: var(--space-xs);
   }
 
   .staff-display-wrapper {
@@ -547,6 +592,14 @@ body {
     font-size: 1.1rem;
     width: 100%;
     text-align: center;
+  }
+
+  .header-controls {
+    gap: var(--space-xs);
+  }
+
+  .root-enforcement-toggle label {
+    font-size: 0.9rem;
   }
 
   .midi-selector-container {
