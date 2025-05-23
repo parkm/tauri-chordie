@@ -434,6 +434,61 @@ body {
   opacity: 1;
 }
 
+/* New Chord Display with Smooth Transitions */
+.chord-display-container {
+  position: relative;
+  height: 60px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.chord-instance {
+  position: absolute;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-align: center;
+  white-space: nowrap;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chord-instance.entering {
+  transform: translateY(20px);
+  opacity: 0;
+  animation: chordEnter 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.chord-instance.exiting {
+  transform: translateY(0);
+  opacity: 1;
+  animation: chordExit 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes chordEnter {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes chordExit {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .app-header {
@@ -461,6 +516,10 @@ body {
   }
 
   .detected-chord-text {
+    font-size: 1.5rem;
+  }
+
+  .chord-instance {
     font-size: 1.5rem;
   }
 
@@ -506,6 +565,10 @@ body {
   }
 
   .detected-chord-text {
+    font-size: 1.25rem;
+  }
+
+  .chord-instance {
     font-size: 1.25rem;
   }
 

@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 import StaffDisplay from "./StaffDisplay";
+import ChordDisplay from "./ChordDisplay";
 import { detectChord } from "./ChordDetector";
 
 interface MidiDevice {
@@ -144,9 +145,7 @@ function App() {
             <StaffDisplay heldNotes={heldNotes} />
           </div>
           <div className="detected-chord-display-wrapper">
-            <p className={`detected-chord-text ${detectedChordString ? 'visible' : ''}`}>
-              {detectedChordString || ''}
-            </p>
+            <ChordDisplay chordText={detectedChordString} />
           </div>
         </div>
       </main>
