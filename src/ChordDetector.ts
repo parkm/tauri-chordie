@@ -6,13 +6,6 @@ const NOTE_NAMES: { [key: number]: string } = {
   6: "F#", 7: "G", 8: "G#", 9: "A", 10: "A#", 11: "B",
 };
 
-// Function to get note name with octave
-function getNoteNameWithOctave(noteNumber: number): string {
-  const octave = Math.floor(noteNumber / 12) - 1;
-  const note = NOTE_NAMES[noteNumber % 12];
-  return note ? `${note}${octave}` : `N${noteNumber}`;
-}
-
 // --- ADVANCED CHORD DETECTION SYSTEM ---
 
 interface ChordDefinition {
@@ -198,7 +191,7 @@ function buildChordName(match: ChordMatch, allPitchClasses: Set<number>, bassNot
       }
 
       if (extensions.length > 0) {
-        chordName += `(${extensions.join("")})`;
+        chordName += `(${extensions.join(",")})`;
       }
     }
   }
@@ -265,61 +258,6 @@ function findOverlappingTriads(pitchClasses: Set<number>): string[] {
   }
 
   return triads;
-}
-
-function buildFromIntervals(pitchClasses: Set<number>): string {
-  const pcArray = Array.from(pitchClasses).sort((a, b) => a - b);
-  const root = pcArray[0];
-  const rootName = NOTE_NAMES[root];
-
-  // Calculate intervals from root
-  const intervals = pcArray.slice(1).map(pc => (pc - root + 12) % 12);
-
-  let quality = "";
-
-  // Determine basic triad quality
-  const hasMinor3 = intervals.includes(3);
-  const hasMajor3 = intervals.includes(4);
-  const hasPerfect5 = intervals.includes(7);
-  const hasAug5 = intervals.includes(8);
-  const hasDim5 = intervals.includes(6);
-
-  if (hasMinor3 && !hasMajor3) {
-    quality = "m";
-  } else if (!hasMinor3 && !hasMajor3) {
-    if (intervals.includes(5)) quality = "sus4";
-    else if (intervals.includes(2)) quality = "sus2";
-    else quality = "no3";
-  }
-
-  // Add fifth alterations
-  if (hasAug5 && !hasPerfect5) {
-    quality += "aug";
-  } else if (hasDim5 && !hasPerfect5) {
-    quality += "dim";
-  }
-
-  // Add seventh
-  if (intervals.includes(11)) {
-    quality += "maj7";
-  } else if (intervals.includes(10)) {
-    quality += "7";
-  }
-
-  // Add extensions
-  const extensions: string[] = [];
-  for (const interval of intervals) {
-    const ext = getExtensionSymbol(interval);
-    if (ext && !quality.includes(ext)) {
-      extensions.push(ext);
-    }
-  }
-
-  if (extensions.length > 0) {
-    quality += `(${extensions.join("")})`;
-  }
-
-  return rootName + quality;
 }
 
 function getIntervalName(interval: number): string {

@@ -1,10 +1,10 @@
 /* Modern Reset & Variables */
 :root {
-  /* Modern Color Palette */
-  --primary: #6200ea;
-  --primary-dark: #4700b3;
-  --primary-light: #7c43bd;
-  --secondary: #00e5ff;
+  /* Modern Color Palette - Blue Theme */
+  --primary: #1976d2;
+  --primary-dark: #115293;
+  --primary-light: #4791db;
+  --secondary: #00bcd4;
   --text: #212121;
   --text-light: #ffffff;
   --background: #fafafa;
@@ -17,6 +17,7 @@
   --error: #ff3d00;
   --warning: #ffab00;
   --card: #ffffff;
+  --staff-bg: #f8f9fa;
   --shadow-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
   --shadow-2: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
   --shadow-3: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
@@ -138,7 +139,7 @@ body {
 
 .btn:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(98, 0, 234, 0.4);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.4);
 }
 
 /* Different button variants */
@@ -158,7 +159,7 @@ body {
 }
 
 .btn-outlined:hover {
-  background-color: rgba(98, 0, 234, 0.1);
+  background-color: rgba(25, 118, 210, 0.1);
 }
 
 /* MIDI device selector with unmistakable button appearance */
@@ -361,18 +362,9 @@ body {
   gap: var(--space-sm);
   width: 100%;
   max-width: 800px;
-}
-
-.staff-brace {
-  font-size: 7.2rem;
-  line-height: 1;
-  color: var(--text);
-  font-family: 'Times New Roman', Times, serif;
-  font-weight: lighter;
-  display: flex;
-  align-items: center;
-  height: calc(var(--staff-height) * 2 + var(--staff-gap));
-  margin-right: var(--space-md);
+  background-color: var(--staff-bg);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
 }
 
 .staves-block {
@@ -438,6 +430,31 @@ body {
   stroke-width: 1px;
 }
 
+/* VexFlow Container Styling */
+.vexflow-container {
+  flex-grow: 1;
+  min-width: 0;
+  height: var(--staff-height);
+  position: relative;
+}
+
+.vexflow-container svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* VexFlow note label styling */
+.vexflow-note-label {
+  fill: var(--gray-800);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  dominant-baseline: middle;
+  text-anchor: end;
+}
+
+/* VexFlow uses default black styling for professional notation appearance */
+
 /* Detected Chord Display */
 .detected-chord-display-wrapper {
   height: 60px;
@@ -452,17 +469,9 @@ body {
   font-weight: 600;
   color: var(--primary);
   text-align: center;
-  transform: translateY(20px);
-  opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
-.detected-chord-text.visible {
-  transform: translateY(0);
-  opacity: 1;
-}
-
-/* New Chord Display with Smooth Transitions */
+/* Chord Display */
 .chord-display-container {
   position: relative;
   height: 60px;
@@ -474,47 +483,11 @@ body {
 }
 
 .chord-instance {
-  position: absolute;
   font-size: 2rem;
   font-weight: 600;
   color: var(--primary);
   text-align: center;
   white-space: nowrap;
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.chord-instance.entering {
-  transform: translateY(20px);
-  opacity: 0;
-  animation: chordEnter 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-.chord-instance.exiting {
-  transform: translateY(0);
-  opacity: 1;
-  animation: chordExit 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
-@keyframes chordEnter {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes chordExit {
-  from {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
 }
 
 /* Responsive Design */
@@ -568,16 +541,6 @@ body {
     font-size: 1.5rem;
   }
 
-  .staff-brace {
-    font-size: 5.5rem;
-  }
-
-  .clef {
-    font-size: calc(var(--staff-height) * 0.6);
-    margin-right: var(--space-sm);
-    width: 40px;
-  }
-
   .main-content {
     padding: var(--space-sm);
   }
@@ -625,19 +588,9 @@ body {
     font-size: 1.25rem;
   }
 
-  .staff-brace {
-    font-size: 4.5rem;
-    margin-right: var(--space-sm);
-  }
-
-  .clef {
-    font-size: calc(var(--staff-height) * 0.5);
-    margin-right: var(--space-xs);
-    width: 30px;
-  }
-
   .grand-staff-container {
     gap: var(--space-xs);
+    padding: var(--space-md);
   }
 }
 
@@ -646,6 +599,7 @@ body {
   :root {
     --background: #121212;
     --card: #1e1e1e;
+    --staff-bg: #efefef;
     --text: #e0e0e0;
     --gray-100: #2d2d2d;
     --gray-200: #333333;
@@ -663,7 +617,7 @@ body {
   }
 
   .info-message {
-    background-color: rgba(98, 0, 234, 0.15);
+    background-color: rgba(25, 118, 210, 0.15);
   }
 
   .staff-lines line, .ledger-line {

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { Renderer, Stave, StaveNote, Formatter, Accidental } from 'vexflow';
 
 interface StaffDisplayProps {
   heldNotes: number[];
@@ -10,197 +11,130 @@ const MIDI_PITCH_CLASS_TO_NAME: { [key: number]: string } = {
   6: "F#", 7: "G", 8: "G#", 9: "A", 10: "A#", 11: "B",
 };
 
-// Diatonic value of note letters (C=0, D=1, ..., B=6)
-const DIATONIC_NOTE_LETTER_VALUES: { [key: string]: number } = {
-  'C': 0, 'D': 1, 'E': 2, 'F': 3, 'G': 4, 'A': 5, 'B': 6
-};
-
-// Generates a string like "C4", "F#5"
-function getNoteNameWithOctave(noteNumber: number): string {
+// Convert MIDI note number to VexFlow note format (e.g., "c/4", "g#/5")
+function midiToVexFlowNote(noteNumber: number): { note: string; accidental: string | null } {
   const octave = Math.floor(noteNumber / 12) - 1;
   const notePitchClass = noteNumber % 12;
   const noteName = MIDI_PITCH_CLASS_TO_NAME[notePitchClass];
-  return noteName ? `${noteName}${octave}` : `N${noteNumber}`;
+
+  if (!noteName) {
+    return { note: `c/${octave}`, accidental: null };
+  }
+
+  const isSharp = noteName.includes('#');
+  const baseName = noteName.charAt(0).toLowerCase();
+  const accidental = isSharp ? '#' : null;
+
+  return { note: `${baseName}/${octave}`, accidental };
 }
 
 const StaffDisplay: React.FC<StaffDisplayProps> = ({ heldNotes }) => {
-  // These values should match CSS variables
-  const staffHeight = 100;
-  const lineSpacing = staffHeight / 8;
-  const noteRadius = lineSpacing / 2.8;
-  const noteNameX = 40;
-  const clefWidth = 50;
-  const noteXPosition = clefWidth + noteNameX + 25;
-  const ledgerLineLength = noteRadius * 3.5;
-  const notesAreaWidth = 400;
+  const trebleContainerRef = useRef<HTMLDivElement>(null);
+  const bassContainerRef = useRef<HTMLDivElement>(null);
 
-  const getNoteStaffInfo = (noteNumber: number) => {
-    const octave = Math.floor(noteNumber / 12) - 1;
-    const notePitchClass = noteNumber % 12;
-    const rawNoteName = MIDI_PITCH_CLASS_TO_NAME[notePitchClass];
-    const diatonicNoteLetter = rawNoteName.charAt(0);
-    const diatonicValue = DIATONIC_NOTE_LETTER_VALUES[diatonicNoteLetter];
-    const noteNameString = getNoteNameWithOctave(noteNumber);
-    const isSharp = rawNoteName.includes('#');
-    let clef: 'treble' | 'bass';
-    let staffPosition: number;
+  useEffect(() => {
+    if (!trebleContainerRef.current || !bassContainerRef.current) return;
 
-    if (noteNumber >= 60) {
-      clef = 'treble';
-      const refOctave = 4;
-      const refDiatonicValue = DIATONIC_NOTE_LETTER_VALUES['E'];
-      staffPosition = (octave - refOctave) * 7 + (diatonicValue - refDiatonicValue);
-    } else {
-      clef = 'bass';
-      const refOctave = 2;
-      const refDiatonicValue = DIATONIC_NOTE_LETTER_VALUES['G'];
-      staffPosition = (octave - refOctave) * 7 + (diatonicValue - refDiatonicValue);
-    }
-    const y = (lineSpacing * 6) - (staffPosition * (lineSpacing / 2));
-    return {
-      y,
-      clef,
-      staffPosition,
-      noteNameString,
-      isSharp,
-    };
-  };
+    // Clear previous renderings
+    trebleContainerRef.current.innerHTML = '';
+    bassContainerRef.current.innerHTML = '';
 
-  const renderLedgerLines = (noteStaffInfo: ReturnType<typeof getNoteStaffInfo>, currentNoteX: number) => {
-    const ledgerLinesJsx = [];
-    const { staffPosition, clef } = noteStaffInfo;
-    if (staffPosition < 0) {
-      for (let sp = -1; sp >= staffPosition; sp--) {
-        if (sp % 2 === 0) {
-          const ledgerLineY = (lineSpacing * 6) - (sp * (lineSpacing / 2));
-          ledgerLinesJsx.push(
-            <line
-              key={`${clef}-ledger-below-${sp}`}
-              x1={currentNoteX - ledgerLineLength / 2}
-              y1={ledgerLineY}
-              x2={currentNoteX + ledgerLineLength / 2}
-              y2={ledgerLineY}
-              className="ledger-line"
-            />
-          );
-        }
-      }
+    // Group notes by clef (middle C = 60)
+    const trebleNotes = heldNotes.filter(note => note >= 60).sort((a, b) => a - b);
+    const bassNotes = heldNotes.filter(note => note < 60).sort((a, b) => a - b);
+
+    // Render treble staff
+    if (trebleContainerRef.current) {
+      renderStaff({
+        container: trebleContainerRef.current,
+        clef: 'treble',
+        notes: trebleNotes
+      });
     }
-    if (staffPosition > 8) {
-      for (let sp = 9; sp <= staffPosition; sp++) {
-        if (sp % 2 === 0) {
-          const ledgerLineY = (lineSpacing * 6) - (sp * (lineSpacing / 2));
-          ledgerLinesJsx.push(
-            <line
-              key={`${clef}-ledger-above-${sp}`}
-              x1={currentNoteX - ledgerLineLength / 2}
-              y1={ledgerLineY}
-              x2={currentNoteX + ledgerLineLength / 2}
-              y2={ledgerLineY}
-              className="ledger-line"
-            />
-          );
-        }
-      }
+
+    // Render bass staff
+    if (bassContainerRef.current) {
+      renderStaff({
+        container: bassContainerRef.current,
+        clef: 'bass',
+        notes: bassNotes
+      });
     }
-    return ledgerLinesJsx;
-  };
+  }, [heldNotes]);
 
   return (
     <div className="staff-display-area">
       <div className="grand-staff-container">
-        <div className="staff-brace">{'{'}</div>
         <div className="staves-block">
           <div className="staff">
-            <div className="clef" aria-hidden="true">𝄞</div>
-            <svg viewBox={`0 0 ${noteXPosition + notesAreaWidth} ${staffHeight}`} width="100%" className="staff-svg-container" preserveAspectRatio="none">
-              <g className="staff-lines">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <line
-                    key={`treble-line-${i}`}
-                    x1="0"
-                    y1={lineSpacing * (i + 2)}
-                    x2="100%"
-                    y2={lineSpacing * (i + 2)}
-                  />
-                ))}
-              </g>
-              {heldNotes.map(noteNumber => {
-                const info = getNoteStaffInfo(noteNumber);
-                if (info.clef === 'treble') {
-                  return (
-                    <g key={`treble-note-${noteNumber}-${info.noteNameString}`} className="note-visualization">
-                      <text
-                        x={noteNameX}
-                        y={info.y + noteRadius / 3}
-                      >
-                        {info.noteNameString}
-                      </text>
-                      {renderLedgerLines(info, noteXPosition)}
-                      {info.isSharp && (
-                        <text
-                          x={noteXPosition - noteRadius * 1.8}
-                          y={info.y + noteRadius / 2.5}
-                          className="accidental"
-                        >
-                          #
-                        </text>
-                      )}
-                      <circle cx={noteXPosition} cy={info.y} r={noteRadius} />
-                    </g>
-                  );
-                }
-                return null;
-              })}
-            </svg>
+            <div ref={trebleContainerRef} className="vexflow-container" />
           </div>
           <div className="staff">
-            <div className="clef" aria-hidden="true">𝄢</div>
-            <svg viewBox={`0 0 ${noteXPosition + notesAreaWidth} ${staffHeight}`} width="100%" className="staff-svg-container" preserveAspectRatio="none">
-              <g className="staff-lines">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <line
-                    key={`bass-line-${i}`}
-                    x1="0"
-                    y1={lineSpacing * (i + 2)}
-                    x2="100%"
-                    y2={lineSpacing * (i + 2)}
-                  />
-                ))}
-              </g>
-              {heldNotes.map(noteNumber => {
-                const info = getNoteStaffInfo(noteNumber);
-                if (info.clef === 'bass') {
-                  return (
-                    <g key={`bass-note-${noteNumber}-${info.noteNameString}`} className="note-visualization">
-                       <text
-                        x={noteNameX}
-                        y={info.y + noteRadius / 3}
-                      >
-                        {info.noteNameString}
-                      </text>
-                      {renderLedgerLines(info, noteXPosition)}
-                      {info.isSharp && (
-                        <text
-                          x={noteXPosition - noteRadius * 1.8}
-                          y={info.y + noteRadius / 2.5}
-                          className="accidental"
-                        >
-                          #
-                        </text>
-                      )}
-                      <circle cx={noteXPosition} cy={info.y} r={noteRadius} />
-                    </g>
-                  );
-                }
-                return null;
-              })}
-            </svg>
+            <div ref={bassContainerRef} className="vexflow-container" />
           </div>
         </div>
       </div>
     </div>
   );
 };
+
+interface RenderStaffOptions {
+  container: HTMLElement;
+  clef: 'treble' | 'bass';
+  notes: number[];
+}
+
+function renderStaff({ container, clef, notes }: RenderStaffOptions) {
+  const width = container.clientWidth || 600;
+  const height = 100;
+
+  // Create VexFlow renderer
+  const renderer = new Renderer(container as HTMLDivElement, Renderer.Backends.SVG);
+  renderer.resize(width, height);
+  const context = renderer.getContext();
+
+  // Create a stave
+  const stave = new Stave(10, 0, width - 20);
+  stave.addClef(clef);
+  stave.setContext(context).draw();
+
+  if (notes.length === 0) {
+    return;
+  }
+
+  // Convert all MIDI notes to VexFlow format and create a single chord
+  const noteKeys: string[] = [];
+  const accidentalIndices: { index: number; accidental: string }[] = [];
+
+  notes.forEach((midiNote) => {
+    const { note, accidental } = midiToVexFlowNote(midiNote);
+    noteKeys.push(note);
+
+    if (accidental) {
+      accidentalIndices.push({ index: noteKeys.length - 1, accidental });
+    }
+  });
+
+  if (noteKeys.length > 0) {
+    try {
+      // Create a single chord with all notes
+      const staveNote = new StaveNote({
+        clef: clef,
+        keys: noteKeys,
+        duration: 'w' // whole note
+      });
+
+      // Add accidentals
+      accidentalIndices.forEach(({ index, accidental }) => {
+        staveNote.addModifier(new Accidental(accidental), index);
+      });
+
+      // Format and draw the note
+      Formatter.FormatAndDraw(context, stave, [staveNote]);
+    } catch (error) {
+      console.error('Error creating VexFlow chord:', error, { noteKeys, clef });
+    }
+  }
+}
 
 export default StaffDisplay;
