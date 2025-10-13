@@ -5,6 +5,7 @@ import "./App.css";
 import StaffDisplay from "./StaffDisplay";
 import ChordDisplay from "./ChordDisplay";
 import { detectChord } from "./ChordDetector";
+import { MusicalKey } from "./types";
 
 interface MidiDevice {
   index: number;
@@ -21,6 +22,7 @@ function App() {
   const [isDeviceSelectorOpen, setIsDeviceSelectorOpen] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [enforceRootNote, setEnforceRootNote] = useState<boolean>(false);
+  const [selectedKey, setSelectedKey] = useState<string>("C");
 
   useEffect(() => {
     async function fetchMidiDevices() {
@@ -69,7 +71,7 @@ function App() {
           unlisten = await listen<number[]>("midi_held_notes", (event) => {
             const currentNotes = event.payload.sort((a, b) => a - b);
             setHeldNotes(currentNotes);
-            setDetectedChordString(detectChord(currentNotes, enforceRootNote));
+            setDetectedChordString(detectChord(currentNotes, enforceRootNote, selectedKey));
           });
         } catch (err) {
           console.error(
@@ -90,7 +92,7 @@ function App() {
         );
       }
     };
-  }, [selectedDeviceIndex, enforceRootNote]);
+  }, [selectedDeviceIndex, enforceRootNote, selectedKey]);
 
   const getSelectedDeviceName = () => {
     if (selectedDeviceIndex === null) return "Select MIDI Device";
@@ -111,6 +113,29 @@ function App() {
                 onChange={(e) => setEnforceRootNote(e.target.checked)}
               />
               Enforce Root Note
+            </label>
+          </div>
+          <div className="key-selector">
+            <label>
+              Key:
+              <select
+                value={selectedKey}
+                onChange={(e) => setSelectedKey(e.target.value)}
+              >
+                <option value="C">C/Am (0♯/♭)</option>
+                <option value="G">G/Em (1♯)</option>
+                <option value="D">D/Bm (2♯)</option>
+                <option value="A">A/F#m (3♯)</option>
+                <option value="E">E/C#m (4♯)</option>
+                <option value="B">B/G#m (5♯)</option>
+                <option value="F#">F#/D#m (6♯)</option>
+                <option value="Gb">Gb/Ebm (6♭)</option>
+                <option value="Db">Db/Bbm (5♭)</option>
+                <option value="Ab">Ab/Fm (4♭)</option>
+                <option value="Eb">Eb/Cm (3♭)</option>
+                <option value="Bb">Bb/Gm (2♭)</option>
+                <option value="F">F/Dm (1♭)</option>
+              </select>
             </label>
           </div>
           <div className="midi-selector-container">
@@ -155,7 +180,7 @@ function App() {
 
         <div className="staff-and-chord-container">
           <div className="staff-display-wrapper">
-            <StaffDisplay heldNotes={heldNotes} />
+            <StaffDisplay heldNotes={heldNotes} musicalKey={selectedKey as MusicalKey} />
           </div>
           <div className="detected-chord-display-wrapper">
             <ChordDisplay chordText={detectedChordString} />

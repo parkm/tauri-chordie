@@ -49,10 +49,11 @@ export function midiNotes(...noteNames: string[]): number[] {
 /**
  * Helper function to test chord detection with a simple API.
  * Example: testChord(["C4", "E4", "G4"], "C")
+ * Example with key: testChord(["Ab3", "C4", "Eb4"], "Ab", { key: "Ab" })
  */
-export function testChord(noteNames: string[], expectedChord: string): void {
+export function testChord(noteNames: string[], expectedChord: string, options?: { key?: string }): void {
   const notes = midiNotes(...noteNames);
-  const result = detectChord(notes);
+  const result = detectChord(notes, false, options?.key);
   expect(result).toBe(expectedChord);
 }
 
@@ -102,6 +103,84 @@ describe('ChordDetector', () => {
 
     it('detects single note F#', () => {
       testChord(['F#5'], 'F#');
+    });
+  });
+
+  describe('detectChord - Key Signature (Sharps vs Flats)', () => {
+    it('uses sharps in G major', () => {
+      testChord(['C4', 'E4', 'G#4'], 'Caug', { key: 'G' });
+    });
+
+    it('uses flats in F major', () => {
+      testChord(['C4', 'Eb4', 'Gb4'], 'Cdim', { key: 'F' });
+    });
+
+    it('uses flats in Ab major', () => {
+      testChord(['Ab3', 'C4', 'Eb4'], 'Ab', { key: 'Ab' });
+    });
+
+    it('uses sharps in E major', () => {
+      testChord(['E4', 'G#4', 'B4'], 'E', { key: 'E' });
+    });
+
+    it('uses flats in Bb major', () => {
+      testChord(['Bb3', 'D4', 'F4'], 'Bb', { key: 'Bb' });
+    });
+
+    it('defaults to sharps when no key is provided', () => {
+      testChord(['C4', 'E4', 'G#4'], 'Caug');
+    });
+
+    it('shows correct note spelling for D# vs Eb based on key', () => {
+      const sharpResult = detectChord(midiNotes('D#4'), false, 'E');
+      const flatResult = detectChord(midiNotes('D#4'), false, 'Eb');
+      expect(sharpResult).toBe('D#');
+      expect(flatResult).toBe('Eb');
+    });
+  });
+
+  describe('detectChord - Slash Chords with Key Signature', () => {
+    it('uses flats in slash chords for flat keys', () => {
+      testChord(['Bb2', 'D4', 'F4', 'A4'], 'Bbmaj7', { key: 'Bb' });
+      testChord(['Bb2', 'D4', 'F4', 'A4'], 'A#maj7', { key: 'C' });
+    });
+
+    it('uses sharps in slash chords for sharp keys', () => {
+      testChord(['F#2', 'A3', 'C#4', 'E4'], 'F#m7', { key: 'D' });
+      testChord(['F#2', 'A3', 'C#4', 'E4'], 'Gbm7', { key: 'Bb' });
+    });
+
+    it('handles slash chord with flat spelling', () => {
+      testChord(['Gb2', 'Bb3', 'Db4', 'F4'], 'Gbmaj7', { key: 'Gb' });
+      testChord(['Gb2', 'Bb3', 'Db4', 'F4'], 'F#maj7', { key: 'C' });
+    });
+
+    it('detects slash chord with flat spelling (first inversion)', () => {
+      testChord(['Bb3', 'Eb4', 'G4'], 'Eb/Bb', { key: 'Eb' });
+      testChord(['Bb3', 'Eb4', 'G4'], 'D#/A#', { key: 'C' });
+    });
+
+    it('detects slash chord with sharp spelling (first inversion)', () => {
+      testChord(['F#2', 'D3', 'F#3', 'A3'], 'D/F#', { key: 'D' });
+      testChord(['F#2', 'D3', 'F#3', 'A3'], 'D/Gb', { key: 'Bb' });
+    });
+  });
+
+  describe('detectChord - Single Notes with Key Signature', () => {
+    it('displays single note with flat in flat key', () => {
+      testChord(['Ab4'], 'Ab', { key: 'Ab' });
+    });
+
+    it('displays single note with sharp in sharp key', () => {
+      testChord(['F#4'], 'F#', { key: 'G' });
+    });
+
+    it('displays single note C# as Db in flat key', () => {
+      testChord(['C#4'], 'Db', { key: 'Db' });
+    });
+
+    it('displays single note Db as C# in sharp key', () => {
+      testChord(['Db4'], 'C#', { key: 'D' });
     });
   });
 

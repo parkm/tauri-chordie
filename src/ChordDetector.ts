@@ -1,10 +1,27 @@
 // src/ChordDetector.ts
 
-// Consider moving to a shared constants/utils file if also used elsewhere
-const NOTE_NAMES: { [key: number]: string } = {
+// Note names with sharps (default)
+const NOTE_NAMES_SHARP: { [key: number]: string } = {
   0: "C", 1: "C#", 2: "D", 3: "D#", 4: "E", 5: "F",
   6: "F#", 7: "G", 8: "G#", 9: "A", 10: "A#", 11: "B",
 };
+
+// Note names with flats
+const NOTE_NAMES_FLAT: { [key: number]: string } = {
+  0: "C", 1: "Db", 2: "D", 3: "Eb", 4: "E", 5: "F",
+  6: "Gb", 7: "G", 8: "Ab", 9: "A", 10: "Bb", 11: "B",
+};
+
+// Keys that use flats
+const FLAT_KEYS = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'];
+
+// Get the appropriate note names based on key
+function getNoteNames(key?: string): { [key: number]: string } {
+  if (key && FLAT_KEYS.includes(key)) {
+    return NOTE_NAMES_FLAT;
+  }
+  return NOTE_NAMES_SHARP;
+}
 
 // --- ADVANCED CHORD DETECTION SYSTEM ---
 
@@ -147,8 +164,14 @@ function analyzeChord(pitchClasses: Set<number>, enforceRootNote: boolean, lowes
   return matches;
 }
 
-function buildChordName(match: ChordMatch, allPitchClasses: Set<number>, bassNote: number): string {
-  const rootName = NOTE_NAMES[match.root];
+function buildChordName(params: {
+  match: ChordMatch;
+  allPitchClasses: Set<number>;
+  bassNote: number;
+  noteNames: { [key: number]: string };
+}): string {
+  const { match, allPitchClasses, bassNote, noteNames } = params;
+  const rootName = noteNames[match.root];
   let chordName = rootName + match.chord.symbol;
 
   // Find unmatched notes for extensions
@@ -198,7 +221,7 @@ function buildChordName(match: ChordMatch, allPitchClasses: Set<number>, bassNot
 
   // Add slash notation for bass note
   if (bassNote !== match.root) {
-    const bassName = NOTE_NAMES[bassNote];
+    const bassName = noteNames[bassNote];
     chordName += `/${bassName}`;
   }
 
@@ -221,12 +244,16 @@ function getExtensionSymbol(interval: number): string | null {
   return extensionMap[interval] || null;
 }
 
-function findOverlappingTriads(pitchClasses: Set<number>): string[] {
+function findOverlappingTriads(params: {
+  pitchClasses: Set<number>;
+  noteNames: { [key: number]: string };
+}): string[] {
+  const { pitchClasses, noteNames } = params;
   const triads: string[] = [];
 
   // Check all possible triads
   for (let root = 0; root < 12; root++) {
-    const rootName = NOTE_NAMES[root];
+    const rootName = noteNames[root];
 
     // Major triad
     if (pitchClasses.has(root) &&
@@ -325,8 +352,13 @@ function findBestRoot(pitchClasses: Set<number>, enforceRootNote: boolean, lowes
   return bestRoot;
 }
 
-function buildIntervalAnalysis(pitchClasses: Set<number>, root: number): string {
-  const rootName = NOTE_NAMES[root];
+function buildIntervalAnalysis(params: {
+  pitchClasses: Set<number>;
+  root: number;
+  noteNames: { [key: number]: string };
+}): string {
+  const { pitchClasses, root, noteNames } = params;
+  const rootName = noteNames[root];
   const intervals: string[] = [];
 
   const sortedPcs = Array.from(pitchClasses).sort((a, b) => a - b);
@@ -339,15 +371,16 @@ function buildIntervalAnalysis(pitchClasses: Set<number>, root: number): string 
   return `${rootName}(${intervals.join(" ")})`;
 }
 
-export function detectChord(midiNotes: number[], enforceRootNote: boolean = false): string {
+export function detectChord(midiNotes: number[], enforceRootNote: boolean = false, key?: string): string {
   if (!midiNotes || midiNotes.length === 0) return "";
 
+  const noteNames = getNoteNames(key);
   const sortedNotes = [...new Set(midiNotes)].sort((a, b) => a - b);
 
   // Single note - show just the note name without octave
   if (sortedNotes.length === 1) {
     const noteClass = sortedNotes[0] % 12;
-    return NOTE_NAMES[noteClass];
+    return noteNames[noteClass];
   }
 
   const pitchClasses = new Set(sortedNotes.map(n => n % 12));
@@ -361,12 +394,12 @@ export function detectChord(midiNotes: number[], enforceRootNote: boolean = fals
 
     // Use the best match if it's good enough
     if (bestMatch.score > 500 || bestMatch.coverage >= 0.8) {
-      return buildChordName(bestMatch, pitchClasses, lowestNotePc);
+      return buildChordName({ match: bestMatch, allPitchClasses: pitchClasses, bassNote: lowestNotePc, noteNames });
     }
   }
 
   // Fallback: try to find overlapping triads
-  const triads = findOverlappingTriads(pitchClasses);
+  const triads = findOverlappingTriads({ pitchClasses, noteNames });
   if (triads.length >= 2) {
     return `${triads[0]} + ${triads[1]}`;
   }
@@ -374,13 +407,13 @@ export function detectChord(midiNotes: number[], enforceRootNote: boolean = fals
   if (triads.length === 1) {
     // Only show single triad if it's a complete triad
     const triad = triads[0];
-    const rootName = triad.replace(/[^A-G#]/g, '');
+    const rootName = triad.replace(/[^A-Gb#]/g, '');
     const quality = triad.replace(rootName, '');
 
     // Check if we have a complete triad
     let rootPc = -1;
     for (let i = 0; i < 12; i++) {
-      if (NOTE_NAMES[i] === rootName) {
+      if (noteNames[i] === rootName) {
         rootPc = i;
         break;
       }
@@ -410,5 +443,5 @@ export function detectChord(midiNotes: number[], enforceRootNote: boolean = fals
 
   // ROBUST FALLBACK: Find best root and show all intervals
   const bestRoot = findBestRoot(pitchClasses, enforceRootNote, lowestNotePc);
-  return buildIntervalAnalysis(pitchClasses, bestRoot);
+  return buildIntervalAnalysis({ pitchClasses, root: bestRoot, noteNames });
 }
