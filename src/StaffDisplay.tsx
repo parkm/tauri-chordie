@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Renderer, Stave, StaveNote, Formatter, Accidental } from 'vexflow';
 import { MusicalKey } from './types';
 
@@ -76,8 +76,10 @@ function midiToVexFlowNote(params: {
 const StaffDisplay: React.FC<StaffDisplayProps> = ({ heldNotes, musicalKey }) => {
   const trebleContainerRef = useRef<HTMLDivElement>(null);
   const bassContainerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
 
-  useEffect(() => {
+  // Memoize the render function to avoid unnecessary re-renders
+  const performRender = useCallback(() => {
     if (!trebleContainerRef.current || !bassContainerRef.current) return;
 
     // Clear previous renderings
@@ -113,6 +115,30 @@ const StaffDisplay: React.FC<StaffDisplayProps> = ({ heldNotes, musicalKey }) =>
       });
     }
   }, [heldNotes, musicalKey]);
+
+  // Set up ResizeObserver to watch for container size changes
+  useEffect(() => {
+    const trebleContainer = trebleContainerRef.current;
+    if (!trebleContainer) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const newWidth = entry.contentRect.width;
+        setContainerWidth(newWidth);
+      }
+    });
+
+    resizeObserver.observe(trebleContainer);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  // Trigger render when notes, key, or container size changes
+  useEffect(() => {
+    performRender();
+  }, [performRender, containerWidth]);
 
   return (
     <div className="staff-display-area">

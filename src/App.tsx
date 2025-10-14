@@ -23,6 +23,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [enforceRootNote, setEnforceRootNote] = useState<boolean>(false);
   const [selectedKey, setSelectedKey] = useState<string>("C");
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
     async function fetchMidiDevices() {
@@ -102,6 +103,116 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Hamburger menu button - only visible in compact mode */}
+      <button
+        className="hamburger-menu-button"
+        onClick={() => setIsMenuOpen(!isMenuOpen)}
+        aria-label="Toggle menu"
+        aria-expanded={isMenuOpen}
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      {/* Overlay when menu is open */}
+      {isMenuOpen && (
+        <div
+          className="menu-overlay"
+          onClick={() => setIsMenuOpen(false)}
+        />
+      )}
+
+      {/* Sliding menu panel */}
+      <div className={`menu-panel ${isMenuOpen ? 'open' : ''}`}>
+        <div className="menu-header">
+          <h2>Settings</h2>
+          <button
+            className="menu-close-button"
+            onClick={() => setIsMenuOpen(false)}
+            aria-label="Close menu"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="menu-content">
+          <div className="menu-section">
+            <h3>Key Signature</h3>
+            <div className="key-selector-menu">
+              <select
+                value={selectedKey}
+                onChange={(e) => setSelectedKey(e.target.value)}
+              >
+                <option value="C">C/Am (0♯/♭)</option>
+                <option value="G">G/Em (1♯)</option>
+                <option value="D">D/Bm (2♯)</option>
+                <option value="A">A/F#m (3♯)</option>
+                <option value="E">E/C#m (4♯)</option>
+                <option value="B">B/G#m (5♯)</option>
+                <option value="F#">F#/D#m (6♯)</option>
+                <option value="Gb">Gb/Ebm (6♭)</option>
+                <option value="Db">Db/Bbm (5♭)</option>
+                <option value="Ab">Ab/Fm (4♭)</option>
+                <option value="Eb">Eb/Cm (3♭)</option>
+                <option value="Bb">Bb/Gm (2♭)</option>
+                <option value="F">F/Dm (1♭)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="menu-section">
+            <h3>Chord Detection</h3>
+            <div className="root-enforcement-toggle-menu">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={enforceRootNote}
+                  onChange={(e) => setEnforceRootNote(e.target.checked)}
+                />
+                Enforce Root Note
+              </label>
+            </div>
+          </div>
+
+          <div className="menu-section">
+            <h3>MIDI Device</h3>
+            <div className="midi-device-menu">
+              <button
+                onClick={() => setIsDeviceSelectorOpen(!isDeviceSelectorOpen)}
+                className={`midi-selector-toggle-menu ${isDeviceSelectorOpen ? 'active' : ''}`}
+              >
+                {getSelectedDeviceName()}
+              </button>
+              {isDeviceSelectorOpen && (
+                <div className="midi-device-list-menu">
+                  {midiDevices.length > 0 ? (
+                    <ul>
+                      {midiDevices.map((device) => (
+                        <li
+                          key={device.index}
+                          onClick={() => {
+                            handleDeviceClick(device.index);
+                            setIsMenuOpen(false);
+                          }}
+                          className={selectedDeviceIndex === device.index ? "selected-device" : ""}
+                        >
+                          {device.name}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="no-devices-message">No MIDI devices found</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {error && <div className="menu-error">{error}</div>}
+        </div>
+      </div>
+
       <header className="app-header">
         <h1>tauri-chordie</h1>
         <div className="header-controls">
