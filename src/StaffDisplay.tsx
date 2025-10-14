@@ -141,14 +141,14 @@ const StaffDisplay: React.FC<StaffDisplayProps> = ({ heldNotes, musicalKey }) =>
   }, [performRender, containerWidth]);
 
   return (
-    <div className="staff-display-area">
-      <div className="grand-staff-container">
-        <div className="staves-block">
-          <div className="staff">
-            <div ref={trebleContainerRef} className="vexflow-container" />
+    <div className="w-full h-full flex flex-col items-center justify-center min-h-0">
+      <div className="flex items-start gap-2 w-full max-w-[800px] bg-staff-bg p-6 rounded-lg min-h-0 max-[768px]:p-4 max-[480px]:p-2">
+        <div className="flex flex-col gap-[var(--staff-gap)] flex-1 min-w-0 w-full">
+          <div className="flex items-center relative w-full min-w-0">
+            <div ref={trebleContainerRef} className="flex-1 min-w-0 w-full h-[var(--staff-height)] relative overflow-visible" />
           </div>
-          <div className="staff">
-            <div ref={bassContainerRef} className="vexflow-container" />
+          <div className="flex items-center relative w-full min-w-0">
+            <div ref={bassContainerRef} className="flex-1 min-w-0 w-full h-[var(--staff-height)] relative overflow-visible" />
           </div>
         </div>
       </div>
