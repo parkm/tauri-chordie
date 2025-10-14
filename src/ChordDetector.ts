@@ -2,18 +2,38 @@
 
 // Note names with sharps (default)
 const NOTE_NAMES_SHARP: { [key: number]: string } = {
-  0: "C", 1: "C#", 2: "D", 3: "D#", 4: "E", 5: "F",
-  6: "F#", 7: "G", 8: "G#", 9: "A", 10: "A#", 11: "B",
+  0: "C",
+  1: "C#",
+  2: "D",
+  3: "D#",
+  4: "E",
+  5: "F",
+  6: "F#",
+  7: "G",
+  8: "G#",
+  9: "A",
+  10: "A#",
+  11: "B",
 };
 
 // Note names with flats
 const NOTE_NAMES_FLAT: { [key: number]: string } = {
-  0: "C", 1: "Db", 2: "D", 3: "Eb", 4: "E", 5: "F",
-  6: "Gb", 7: "G", 8: "Ab", 9: "A", 10: "Bb", 11: "B",
+  0: "C",
+  1: "Db",
+  2: "D",
+  3: "Eb",
+  4: "E",
+  5: "F",
+  6: "Gb",
+  7: "G",
+  8: "Ab",
+  9: "A",
+  10: "Bb",
+  11: "B",
 };
 
 // Keys that use flats
-const FLAT_KEYS = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'];
+const FLAT_KEYS = ["F", "Bb", "Eb", "Ab", "Db", "Gb"];
 
 // Get the appropriate note names based on key
 function getNoteNames(key?: string): { [key: number]: string } {
@@ -132,10 +152,10 @@ function analyzeChord(pitchClasses: Set<number>, enforceRootNote: boolean, lowes
 
       // Calculate exactness (how well it fits without extra notes)
       const extraNotes = pcArray.length - matchedIntervals.length;
-      const exactness = Math.max(0, 1 - (extraNotes * 0.2));
+      const exactness = Math.max(0, 1 - extraNotes * 0.2);
 
       // Calculate final score
-      const score = (coverage * chord.priority * exactness);
+      const score = coverage * chord.priority * exactness;
 
       matches.push({
         root,
@@ -143,7 +163,7 @@ function analyzeChord(pitchClasses: Set<number>, enforceRootNote: boolean, lowes
         matchedIntervals,
         coverage,
         exactness,
-        score
+        score,
       });
     }
   }
@@ -230,24 +250,21 @@ function buildChordName(params: {
 
 function getExtensionSymbol(interval: number): string | null {
   const extensionMap: { [key: number]: string } = {
-    1: "b9",   // Minor 2nd
-    2: "9",    // Major 2nd / 9th
-    3: "#9",   // Augmented 2nd
-    5: "11",   // Perfect 4th / 11th
-    6: "#11",  // Tritone / #11
-    8: "b13",  // Minor 6th / b13
-    9: "13",   // Major 6th / 13th
-    10: "7",   // Minor 7th
-    11: "maj7" // Major 7th
+    1: "b9", // Minor 2nd
+    2: "9", // Major 2nd / 9th
+    3: "#9", // Augmented 2nd
+    5: "11", // Perfect 4th / 11th
+    6: "#11", // Tritone / #11
+    8: "b13", // Minor 6th / b13
+    9: "13", // Major 6th / 13th
+    10: "7", // Minor 7th
+    11: "maj7", // Major 7th
   };
 
   return extensionMap[interval] || null;
 }
 
-function findOverlappingTriads(params: {
-  pitchClasses: Set<number>;
-  noteNames: { [key: number]: string };
-}): string[] {
+function findOverlappingTriads(params: { pitchClasses: Set<number>; noteNames: { [key: number]: string } }): string[] {
   const { pitchClasses, noteNames } = params;
   const triads: string[] = [];
 
@@ -256,30 +273,22 @@ function findOverlappingTriads(params: {
     const rootName = noteNames[root];
 
     // Major triad
-    if (pitchClasses.has(root) &&
-        pitchClasses.has((root + 4) % 12) &&
-        pitchClasses.has((root + 7) % 12)) {
+    if (pitchClasses.has(root) && pitchClasses.has((root + 4) % 12) && pitchClasses.has((root + 7) % 12)) {
       triads.push(rootName);
     }
 
     // Minor triad
-    if (pitchClasses.has(root) &&
-        pitchClasses.has((root + 3) % 12) &&
-        pitchClasses.has((root + 7) % 12)) {
+    if (pitchClasses.has(root) && pitchClasses.has((root + 3) % 12) && pitchClasses.has((root + 7) % 12)) {
       triads.push(rootName + "m");
     }
 
     // Augmented triad
-    if (pitchClasses.has(root) &&
-        pitchClasses.has((root + 4) % 12) &&
-        pitchClasses.has((root + 8) % 12)) {
+    if (pitchClasses.has(root) && pitchClasses.has((root + 4) % 12) && pitchClasses.has((root + 8) % 12)) {
       triads.push(rootName + "aug");
     }
 
     // Diminished triad
-    if (pitchClasses.has(root) &&
-        pitchClasses.has((root + 3) % 12) &&
-        pitchClasses.has((root + 6) % 12)) {
+    if (pitchClasses.has(root) && pitchClasses.has((root + 3) % 12) && pitchClasses.has((root + 6) % 12)) {
       triads.push(rootName + "dim");
     }
   }
@@ -289,18 +298,18 @@ function findOverlappingTriads(params: {
 
 function getIntervalName(interval: number): string {
   const intervalNames: { [key: number]: string } = {
-    0: "R",     // Root
-    1: "b2",    // Minor 2nd
-    2: "2",     // Major 2nd
-    3: "b3",    // Minor 3rd
-    4: "3",     // Major 3rd
-    5: "4",     // Perfect 4th
-    6: "b5",    // Tritone/Diminished 5th
-    7: "5",     // Perfect 5th
-    8: "#5",    // Augmented 5th
-    9: "6",     // Major 6th
-    10: "b7",   // Minor 7th
-    11: "7"     // Major 7th
+    0: "R", // Root
+    1: "b2", // Minor 2nd
+    2: "2", // Major 2nd
+    3: "b3", // Minor 3rd
+    4: "3", // Major 3rd
+    5: "4", // Perfect 4th
+    6: "b5", // Tritone/Diminished 5th
+    7: "5", // Perfect 5th
+    8: "#5", // Augmented 5th
+    9: "6", // Major 6th
+    10: "b7", // Minor 7th
+    11: "7", // Major 7th
   };
 
   return intervalNames[interval] || `+${interval}`;
@@ -325,16 +334,36 @@ function findBestRoot(pitchClasses: Set<number>, enforceRootNote: boolean, lowes
 
       // Score based on how common/important the interval is
       switch (interval) {
-        case 0: score += 10; break; // Root
-        case 4: score += 8; break;  // Major 3rd
-        case 3: score += 8; break;  // Minor 3rd
-        case 7: score += 9; break;  // Perfect 5th
-        case 10: score += 6; break; // Minor 7th
-        case 11: score += 6; break; // Major 7th
-        case 2: score += 4; break;  // Major 2nd
-        case 9: score += 4; break;  // Major 6th
-        case 5: score += 3; break;  // Perfect 4th
-        default: score += 1; break;
+        case 0:
+          score += 10;
+          break; // Root
+        case 4:
+          score += 8;
+          break; // Major 3rd
+        case 3:
+          score += 8;
+          break; // Minor 3rd
+        case 7:
+          score += 9;
+          break; // Perfect 5th
+        case 10:
+          score += 6;
+          break; // Minor 7th
+        case 11:
+          score += 6;
+          break; // Major 7th
+        case 2:
+          score += 4;
+          break; // Major 2nd
+        case 9:
+          score += 4;
+          break; // Major 6th
+        case 5:
+          score += 3;
+          break; // Perfect 4th
+        default:
+          score += 1;
+          break;
       }
     }
 
@@ -383,7 +412,7 @@ export function detectChord(midiNotes: number[], enforceRootNote: boolean = fals
     return noteNames[noteClass];
   }
 
-  const pitchClasses = new Set(sortedNotes.map(n => n % 12));
+  const pitchClasses = new Set(sortedNotes.map((n) => n % 12));
   const lowestNotePc = sortedNotes[0] % 12;
 
   // Analyze for chord matches
@@ -407,8 +436,8 @@ export function detectChord(midiNotes: number[], enforceRootNote: boolean = fals
   if (triads.length === 1) {
     // Only show single triad if it's a complete triad
     const triad = triads[0];
-    const rootName = triad.replace(/[^A-Gb#]/g, '');
-    const quality = triad.replace(rootName, '');
+    const rootName = triad.replace(/[^A-Gb#]/g, "");
+    const quality = triad.replace(rootName, "");
 
     // Check if we have a complete triad
     let rootPc = -1;
@@ -421,19 +450,17 @@ export function detectChord(midiNotes: number[], enforceRootNote: boolean = fals
 
     if (rootPc !== -1) {
       let expectedIntervals: number[];
-      if (quality === 'm') {
+      if (quality === "m") {
         expectedIntervals = [0, 3, 7];
-      } else if (quality === 'aug') {
+      } else if (quality === "aug") {
         expectedIntervals = [0, 4, 8];
-      } else if (quality === 'dim') {
+      } else if (quality === "dim") {
         expectedIntervals = [0, 3, 6];
       } else {
         expectedIntervals = [0, 4, 7]; // major
       }
 
-      const hasAllNotes = expectedIntervals.every(interval =>
-        pitchClasses.has((rootPc + interval) % 12)
-      );
+      const hasAllNotes = expectedIntervals.every((interval) => pitchClasses.has((rootPc + interval) % 12));
 
       if (hasAllNotes) {
         return triad;

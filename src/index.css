@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@variant mobile (width < 480px);
+@variant tablet (width < 768px);
+@variant compact (width < 768px);
+@variant compact-h (height < 550px);
+
 @theme {
   /* Custom Colors */
   --color-primary: #1976d2;
@@ -40,13 +45,14 @@
   --radius-xl: 1.5rem;
 
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-  --shadow-md: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-  --shadow-lg: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
 
   /* Typography */
-  --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-family-mono: 'SFMono-Regular', Consolas, Liberation Mono, Menlo, monospace;
+  --font-family-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: "SFMono-Regular", Consolas, Liberation Mono, Menlo, monospace;
 }
 
 /* Dark mode overrides */
@@ -76,7 +82,9 @@
 
 /* Base styles */
 @layer base {
-  html, body, #root {
+  html,
+  body,
+  #root {
     height: 100%;
     width: 100%;
   }
@@ -94,8 +102,12 @@
 
 /* Custom animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @layer utilities {
@@ -123,24 +135,49 @@
     dominant-baseline: middle;
     text-anchor: end;
   }
+}
 
-  /* Compact mode - when viewport is too narrow or too short */
-  @media (max-width: 900px), (max-height: 550px) {
-    :root {
-      --staff-height: clamp(80px, 12vh, 120px);
+/* Responsive utilities using the variants defined above */
+@layer utilities {
+  .hide-compact {
+    @media (width < 768px), (height < 550px) {
+      display: none !important;
     }
   }
 
-  @media (max-width: 768px) {
-    :root {
-      --staff-height: clamp(70px, 10vh, 100px);
+  .show-compact {
+    display: none !important;
+  }
+
+  .show-compact-block {
+    @media (width < 768px), (height < 550px) {
+      display: block !important;
     }
   }
 
-  @media (max-width: 480px) {
-    :root {
-      --staff-height: clamp(60px, 9vh, 90px);
-      --staff-gap: 0px;
+  .show-compact-flex {
+    @media (width < 768px), (height < 550px) {
+      display: flex !important;
     }
+  }
+}
+
+/* Responsive staff heights - match the variant breakpoints above */
+@media (width < 900px), (height < 550px) {
+  :root {
+    --staff-height: clamp(80px, 12vh, 120px);
+  }
+}
+
+@media (width < 768px) {
+  :root {
+    --staff-height: clamp(70px, 10vh, 100px);
+  }
+}
+
+@media (width < 480px) {
+  :root {
+    --staff-height: clamp(60px, 9vh, 90px);
+    --staff-gap: 0px;
   }
 }

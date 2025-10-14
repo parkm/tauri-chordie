@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 
 interface ChordDisplayProps {
   chordText: string;
@@ -28,9 +28,9 @@ const ChordDisplay: React.FC<ChordDisplayProps> = ({ chordText }) => {
   }, [chordText]);
 
   return (
-    <div className="relative h-[60px] w-full flex justify-center items-center overflow-hidden">
+    <div className="relative flex h-[60px] w-full items-center justify-center overflow-hidden">
       {displayedChord && (
-        <div className="text-[2rem] font-semibold text-primary text-center whitespace-nowrap max-[900px]:text-[clamp(1.5rem,5vw,2rem)] max-h-[550px]:text-[clamp(1.5rem,5vw,2rem)] max-[768px]:text-[clamp(1.25rem,4.5vw,1.75rem)] max-[480px]:text-[clamp(1rem,4vw,1.5rem)]">
+        <div className="text-primary compact:text-[clamp(1.5rem,5vw,2rem)] compact-h:text-[clamp(1.5rem,5vw,2rem)] tablet:text-[clamp(1.25rem,4.5vw,1.75rem)] mobile:text-[clamp(1rem,4vw,1.5rem)] text-center text-[2rem] font-semibold whitespace-nowrap">
           {displayedChord}
         </div>
       )}

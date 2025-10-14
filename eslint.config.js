@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
+import prettierConfig from 'eslint-config-prettier';
 
 export default tseslint.config(
   { ignores: ['dist', 'node_modules', 'src-tauri'] },
@@ -17,5 +18,6 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
     },
   },
+  prettierConfig,
 );
 

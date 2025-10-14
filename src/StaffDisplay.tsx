@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Renderer, Stave, StaveNote, Formatter, Accidental } from 'vexflow';
-import { MusicalKey } from './types';
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { Renderer, Stave, StaveNote, Formatter, Accidental } from "vexflow";
+import { MusicalKey } from "./types";
 
 interface StaffDisplayProps {
   heldNotes: number[];
@@ -11,64 +11,64 @@ interface StaffDisplayProps {
 // And how to spell notes NOT in the key (with appropriate accidentals)
 const NOTE_SPELLING: Record<MusicalKey, Record<number, string>> = {
   // C Major: C(0) D(2) E(4) F(5) G(7) A(9) B(11)
-  'C': { 0: 'C', 1: 'C#', 2: 'D', 3: 'D#', 4: 'E', 5: 'F', 6: 'F#', 7: 'G', 8: 'G#', 9: 'A', 10: 'A#', 11: 'B' },
+  C: { 0: "C", 1: "C#", 2: "D", 3: "D#", 4: "E", 5: "F", 6: "F#", 7: "G", 8: "G#", 9: "A", 10: "A#", 11: "B" },
 
   // G Major: G(7) A(9) B(11) C(0) D(2) E(4) F#(6) - F# is in key, so pitch 6 = "F" (no accidental)
-  'G': { 0: 'C', 1: 'C#', 2: 'D', 3: 'D#', 4: 'E', 5: 'Fn', 6: 'F', 7: 'G', 8: 'G#', 9: 'A', 10: 'A#', 11: 'B' },
+  G: { 0: "C", 1: "C#", 2: "D", 3: "D#", 4: "E", 5: "Fn", 6: "F", 7: "G", 8: "G#", 9: "A", 10: "A#", 11: "B" },
 
   // D Major: D(2) E(4) F#(6) G(7) A(9) B(11) C#(1) - F# and C# are in key
-  'D': { 0: 'Cn', 1: 'C', 2: 'D', 3: 'D#', 4: 'E', 5: 'Fn', 6: 'F', 7: 'G', 8: 'G#', 9: 'A', 10: 'A#', 11: 'B' },
+  D: { 0: "Cn", 1: "C", 2: "D", 3: "D#", 4: "E", 5: "Fn", 6: "F", 7: "G", 8: "G#", 9: "A", 10: "A#", 11: "B" },
 
   // A Major: A(9) B(11) C#(1) D(2) E(4) F#(6) G#(8) - F# C# G# are in key
-  'A': { 0: 'Cn', 1: 'C', 2: 'D', 3: 'D#', 4: 'E', 5: 'Fn', 6: 'F', 7: 'Gn', 8: 'G', 9: 'A', 10: 'A#', 11: 'B' },
+  A: { 0: "Cn", 1: "C", 2: "D", 3: "D#", 4: "E", 5: "Fn", 6: "F", 7: "Gn", 8: "G", 9: "A", 10: "A#", 11: "B" },
 
   // E Major: E(4) F#(6) G#(8) A(9) B(11) C#(1) D#(3) - F# C# G# D# are in key
-  'E': { 0: 'Cn', 1: 'C', 2: 'Dn', 3: 'D', 4: 'E', 5: 'Fn', 6: 'F', 7: 'Gn', 8: 'G', 9: 'A', 10: 'A#', 11: 'B' },
+  E: { 0: "Cn", 1: "C", 2: "Dn", 3: "D", 4: "E", 5: "Fn", 6: "F", 7: "Gn", 8: "G", 9: "A", 10: "A#", 11: "B" },
 
   // B Major: B(11) C#(1) D#(3) E(4) F#(6) G#(8) A#(10) - F# C# G# D# A# are in key
-  'B': { 0: 'Cn', 1: 'C', 2: 'Dn', 3: 'D', 4: 'E', 5: 'Fn', 6: 'F', 7: 'Gn', 8: 'G', 9: 'An', 10: 'A', 11: 'B' },
+  B: { 0: "Cn", 1: "C", 2: "Dn", 3: "D", 4: "E", 5: "Fn", 6: "F", 7: "Gn", 8: "G", 9: "An", 10: "A", 11: "B" },
 
   // F# Major: F#(6) G#(8) A#(10) B(11) C#(1) D#(3) E#(5) - all sharps in key, E#=F
-  'F#': { 0: 'B#', 1: 'C', 2: 'Dn', 3: 'D', 4: 'En', 5: 'E', 6: 'F', 7: 'Gn', 8: 'G', 9: 'An', 10: 'A', 11: 'Bn' },
+  "F#": { 0: "B#", 1: "C", 2: "Dn", 3: "D", 4: "En", 5: "E", 6: "F", 7: "Gn", 8: "G", 9: "An", 10: "A", 11: "Bn" },
 
   // Gb Major: Gb(6) Ab(8) Bb(10) Cb(11) Db(1) Eb(3) F(5) - Cb=B, Gb=F#
-  'Gb': { 0: 'Cn', 1: 'D', 2: 'Dn', 3: 'E', 4: 'En', 5: 'F', 6: 'G', 7: 'Gn', 8: 'A', 9: 'An', 10: 'B', 11: 'C' },
+  Gb: { 0: "Cn", 1: "D", 2: "Dn", 3: "E", 4: "En", 5: "F", 6: "G", 7: "Gn", 8: "A", 9: "An", 10: "B", 11: "C" },
 
   // Db Major: Db(1) Eb(3) F(5) Gb(6) Ab(8) Bb(10) C(0) - Db Eb Gb Ab Bb are in key
-  'Db': { 0: 'C', 1: 'D', 2: 'Dn', 3: 'E', 4: 'En', 5: 'F', 6: 'G', 7: 'Gn', 8: 'A', 9: 'An', 10: 'B', 11: 'Bn' },
+  Db: { 0: "C", 1: "D", 2: "Dn", 3: "E", 4: "En", 5: "F", 6: "G", 7: "Gn", 8: "A", 9: "An", 10: "B", 11: "Bn" },
 
   // Ab Major: Ab(8) Bb(10) C(0) Db(1) Eb(3) F(5) G(7) - Ab Bb Db Eb are in key
-  'Ab': { 0: 'C', 1: 'D', 2: 'Dn', 3: 'E', 4: 'En', 5: 'F', 6: 'Gb', 7: 'G', 8: 'A', 9: 'An', 10: 'B', 11: 'Bn' },
+  Ab: { 0: "C", 1: "D", 2: "Dn", 3: "E", 4: "En", 5: "F", 6: "Gb", 7: "G", 8: "A", 9: "An", 10: "B", 11: "Bn" },
 
   // Eb Major: Eb(3) F(5) G(7) Ab(8) Bb(10) C(0) D(2) - Eb Ab Bb are in key
-  'Eb': { 0: 'C', 1: 'Db', 2: 'D', 3: 'E', 4: 'En', 5: 'F', 6: 'Gb', 7: 'G', 8: 'A', 9: 'An', 10: 'B', 11: 'Bn' },
+  Eb: { 0: "C", 1: "Db", 2: "D", 3: "E", 4: "En", 5: "F", 6: "Gb", 7: "G", 8: "A", 9: "An", 10: "B", 11: "Bn" },
 
   // Bb Major: Bb(10) C(0) D(2) Eb(3) F(5) G(7) A(9) - Bb Eb are in key
-  'Bb': { 0: 'C', 1: 'Db', 2: 'D', 3: 'E', 4: 'En', 5: 'F', 6: 'Gb', 7: 'G', 8: 'Ab', 9: 'A', 10: 'B', 11: 'Bn' },
+  Bb: { 0: "C", 1: "Db", 2: "D", 3: "E", 4: "En", 5: "F", 6: "Gb", 7: "G", 8: "Ab", 9: "A", 10: "B", 11: "Bn" },
 
   // F Major: F(5) G(7) A(9) Bb(10) C(0) D(2) E(4) - Bb is in key
-  'F': { 0: 'C', 1: 'Db', 2: 'D', 3: 'Eb', 4: 'E', 5: 'F', 6: 'Gb', 7: 'G', 8: 'Ab', 9: 'A', 10: 'B', 11: 'Bn' },
+  F: { 0: "C", 1: "Db", 2: "D", 3: "Eb", 4: "E", 5: "F", 6: "Gb", 7: "G", 8: "Ab", 9: "A", 10: "B", 11: "Bn" },
 };
 
 // Convert MIDI note to VexFlow note format with proper spelling for the key
-function midiToVexFlowNote(params: {
-  noteNumber: number;
-  keySignature: MusicalKey;
-}): { note: string; accidental: string | null } {
+function midiToVexFlowNote(params: { noteNumber: number; keySignature: MusicalKey }): {
+  note: string;
+  accidental: string | null;
+} {
   const { noteNumber, keySignature } = params;
   const octave = Math.floor(noteNumber / 12) - 1;
   const pitchClass = noteNumber % 12;
 
   // Get the correct spelling for this pitch class in this key
-  const spelling = NOTE_SPELLING[keySignature]?.[pitchClass] || 'C';
+  const spelling = NOTE_SPELLING[keySignature]?.[pitchClass] || "C";
   const baseName = spelling.charAt(0).toLowerCase();
   const modifier = spelling.slice(1);
 
   // Map modifiers to VexFlow accidental symbols
   let accidental: string | null = null;
-  if (modifier === '#') accidental = '#';
-  else if (modifier === 'b') accidental = 'b';
-  else if (modifier === 'n') accidental = 'n'; // natural sign
+  if (modifier === "#") accidental = "#";
+  else if (modifier === "b") accidental = "b";
+  else if (modifier === "n") accidental = "n"; // natural sign
 
   return { note: `${baseName}/${octave}`, accidental };
 }
@@ -83,24 +83,24 @@ const StaffDisplay: React.FC<StaffDisplayProps> = ({ heldNotes, musicalKey }) =>
     if (!trebleContainerRef.current || !bassContainerRef.current) return;
 
     // Clear previous renderings
-    trebleContainerRef.current.innerHTML = '';
-    bassContainerRef.current.innerHTML = '';
+    trebleContainerRef.current.innerHTML = "";
+    bassContainerRef.current.innerHTML = "";
 
     // Use the musical key, default to C if invalid
-    const keySpec = musicalKey || 'C';
+    const keySpec = musicalKey || "C";
 
     // Group notes by clef (middle C = 60)
-    const trebleNotes = heldNotes.filter(note => note >= 60).sort((a, b) => a - b);
-    const bassNotes = heldNotes.filter(note => note < 60).sort((a, b) => a - b);
+    const trebleNotes = heldNotes.filter((note) => note >= 60).sort((a, b) => a - b);
+    const bassNotes = heldNotes.filter((note) => note < 60).sort((a, b) => a - b);
 
     // Render treble staff
     if (trebleContainerRef.current) {
       renderStaff({
         container: trebleContainerRef.current,
-        clef: 'treble',
+        clef: "treble",
         notes: trebleNotes,
         keySpec,
-        musicalKey
+        musicalKey,
       });
     }
 
@@ -108,10 +108,10 @@ const StaffDisplay: React.FC<StaffDisplayProps> = ({ heldNotes, musicalKey }) =>
     if (bassContainerRef.current) {
       renderStaff({
         container: bassContainerRef.current,
-        clef: 'bass',
+        clef: "bass",
         notes: bassNotes,
         keySpec,
-        musicalKey
+        musicalKey,
       });
     }
   }, [heldNotes, musicalKey]);
@@ -141,14 +141,24 @@ const StaffDisplay: React.FC<StaffDisplayProps> = ({ heldNotes, musicalKey }) =>
   }, [performRender, containerWidth]);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center min-h-0">
-      <div className="flex items-start gap-2 w-full max-w-[800px] bg-staff-bg p-6 rounded-lg min-h-0 max-[768px]:p-4 max-[480px]:p-2">
-        <div className="flex flex-col gap-[var(--staff-gap)] flex-1 min-w-0 w-full">
-          <div className="flex items-center relative w-full min-w-0">
-            <div ref={trebleContainerRef} className="flex-1 min-w-0 w-full h-[var(--staff-height)] relative overflow-visible" />
+    <div className="flex h-full min-h-0 w-full flex-col items-center justify-center">
+      {/* Staff background container - responsive padding */}
+      <div className="bg-staff-bg tablet:p-4 mobile:p-2 flex min-h-0 w-full max-w-[800px] items-start gap-2 rounded-lg p-6">
+        <div className="flex w-full min-w-0 flex-1 flex-col gap-[var(--staff-gap)]">
+          {/* Treble staff - height controlled by CSS variable --staff-height */}
+          <div className="relative flex w-full min-w-0 items-center">
+            <div
+              ref={trebleContainerRef}
+              className="relative h-[var(--staff-height)] w-full min-w-0 flex-1 overflow-visible"
+            />
           </div>
-          <div className="flex items-center relative w-full min-w-0">
-            <div ref={bassContainerRef} className="flex-1 min-w-0 w-full h-[var(--staff-height)] relative overflow-visible" />
+
+          {/* Bass staff - height controlled by CSS variable --staff-height */}
+          <div className="relative flex w-full min-w-0 items-center">
+            <div
+              ref={bassContainerRef}
+              className="relative h-[var(--staff-height)] w-full min-w-0 flex-1 overflow-visible"
+            />
           </div>
         </div>
       </div>
@@ -158,7 +168,7 @@ const StaffDisplay: React.FC<StaffDisplayProps> = ({ heldNotes, musicalKey }) =>
 
 interface RenderStaffOptions {
   container: HTMLElement;
-  clef: 'treble' | 'bass';
+  clef: "treble" | "bass";
   notes: number[];
   keySpec: MusicalKey;
   musicalKey: MusicalKey;
@@ -202,7 +212,7 @@ function renderStaff({ container, clef, notes, keySpec, musicalKey }: RenderStaf
       const staveNote = new StaveNote({
         clef: clef,
         keys: noteKeys,
-        duration: 'w' // whole note
+        duration: "w", // whole note
       });
 
       // Add accidentals
@@ -213,7 +223,7 @@ function renderStaff({ container, clef, notes, keySpec, musicalKey }: RenderStaf
       // Format and draw the note
       Formatter.FormatAndDraw(context, stave, [staveNote]);
     } catch (error) {
-      console.error('Error creating VexFlow chord:', error, { noteKeys, clef });
+      console.error("Error creating VexFlow chord:", error, { noteKeys, clef });
     }
   }
 }

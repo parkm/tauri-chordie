@@ -13,9 +13,7 @@ interface MidiDevice {
 
 function App() {
   const [midiDevices, setMidiDevices] = useState<MidiDevice[]>([]);
-  const [selectedDeviceIndex, setSelectedDeviceIndex] = useState<number | null>(
-    null
-  );
+  const [selectedDeviceIndex, setSelectedDeviceIndex] = useState<number | null>(null);
   const [heldNotes, setHeldNotes] = useState<number[]>([]);
   const [detectedChordString, setDetectedChordString] = useState<string>("");
   const [isDeviceSelectorOpen, setIsDeviceSelectorOpen] = useState<boolean>(true);
@@ -57,7 +55,7 @@ function App() {
       console.log(`Started listening to device index: ${index}`);
     } catch (err) {
       console.error(`Failed to listen to MIDI device index ${index}:`, err);
-      setError(`Failed to connect to ${midiDevices.find(d => d.index === index)?.name || `device ${index}`}.`);
+      setError(`Failed to connect to ${midiDevices.find((d) => d.index === index)?.name || `device ${index}`}.`);
       setSelectedDeviceIndex(null);
     }
   }
@@ -74,10 +72,7 @@ function App() {
             setDetectedChordString(detectChord(currentNotes, enforceRootNote, selectedKey));
           });
         } catch (err) {
-          console.error(
-            `Failed to set up MIDI held notes listener for device index ${selectedDeviceIndex}:`,
-            err
-          );
+          console.error(`Failed to set up MIDI held notes listener for device index ${selectedDeviceIndex}:`, err);
           setError("Error receiving MIDI data.");
         }
       };
@@ -87,47 +82,47 @@ function App() {
     return () => {
       if (unlisten) {
         unlisten();
-        console.log(
-          `Stopped listening for MIDI held notes from device index: ${selectedDeviceIndex}`
-        );
+        console.log(`Stopped listening for MIDI held notes from device index: ${selectedDeviceIndex}`);
       }
     };
   }, [selectedDeviceIndex, enforceRootNote, selectedKey]);
 
   const getSelectedDeviceName = () => {
     if (selectedDeviceIndex === null) return "Select MIDI Device";
-    const device = midiDevices.find(d => d.index === selectedDeviceIndex);
+    const device = midiDevices.find((d) => d.index === selectedDeviceIndex);
     return device ? device.name : `Device ${selectedDeviceIndex}`;
   };
 
   return (
-    <div className="grid grid-rows-[auto_1fr] h-screen w-screen overflow-hidden relative">
+    <div className="relative grid h-screen w-screen grid-rows-[auto_1fr] overflow-hidden">
       {/* Hamburger menu button - only visible in compact mode */}
       <button
-        className="hidden max-[900px]:flex max-h-[550px]:flex fixed top-4 left-4 z-[1000] bg-primary border-none rounded-lg w-12 h-12 flex-col justify-center items-center gap-1.5 cursor-pointer shadow-lg transition-all duration-300 hover:bg-primary-dark hover:scale-105 active:scale-95 max-[480px]:w-11 max-[480px]:h-11 max-[480px]:top-2 max-[480px]:left-2"
+        className="show-compact show-compact-flex bg-primary hover:bg-primary-dark mobile:top-2 mobile:left-2 mobile:h-11 mobile:w-11 fixed top-4 left-4 z-[1000] h-12 w-12 cursor-pointer flex-col items-center justify-center gap-[5px] rounded-lg border-none shadow-lg transition-all duration-300 hover:scale-105 active:scale-95"
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         aria-label="Toggle menu"
         aria-expanded={isMenuOpen}
       >
-        <span className="block w-6 h-0.5 bg-white rounded transition-all duration-300"></span>
-        <span className="block w-6 h-0.5 bg-white rounded transition-all duration-300"></span>
-        <span className="block w-6 h-0.5 bg-white rounded transition-all duration-300"></span>
+        <span className="block h-[3px] w-6 rounded bg-white transition-all duration-300"></span>
+        <span className="block h-[3px] w-6 rounded bg-white transition-all duration-300"></span>
+        <span className="block h-[3px] w-6 rounded bg-white transition-all duration-300"></span>
       </button>
 
       {/* Overlay when menu is open */}
       {isMenuOpen && (
         <div
-          className="hidden max-[900px]:block max-h-[550px]:block fixed inset-0 bg-black/50 z-[999] animate-fade-in"
+          className="show-compact show-compact-block animate-fade-in fixed inset-0 z-[999] bg-black/50"
           onClick={() => setIsMenuOpen(false)}
         />
       )}
 
-      {/* Sliding menu panel */}
-      <div className={`hidden max-[900px]:block max-h-[550px]:block fixed top-0 w-80 h-screen bg-card shadow-lg z-[1000] overflow-y-auto transition-[left] duration-300 max-[480px]:w-full ${isMenuOpen ? 'left-0' : '-left-80 max-[480px]:-left-full'}`}>
-        <div className="flex justify-between items-center p-6 bg-gradient-to-br from-primary to-primary-dark text-white sticky top-0 z-10">
+      {/* Sliding menu panel - visible only in compact mode */}
+      <div
+        className={`show-compact show-compact-block bg-card mobile:w-full fixed top-0 z-[1000] h-screen w-80 overflow-y-auto shadow-lg transition-[left] duration-300 ${isMenuOpen ? "left-0" : "mobile:-left-full -left-80"}`}
+      >
+        <div className="from-primary to-primary-dark sticky top-0 z-10 flex items-center justify-between bg-gradient-to-br p-6 text-white">
           <h2 className="m-0 text-2xl font-semibold">Settings</h2>
           <button
-            className="bg-transparent border-none text-white text-2xl cursor-pointer p-1 w-8 h-8 flex items-center justify-center rounded transition-colors duration-200 hover:bg-white/20"
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded border-none bg-transparent p-1 text-2xl text-white transition-colors duration-200 hover:bg-white/20"
             onClick={() => setIsMenuOpen(false)}
             aria-label="Close menu"
           >
@@ -137,12 +132,12 @@ function App() {
 
         <div className="p-6">
           <div className="mb-8">
-            <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Key Signature</h3>
+            <h3 className="text-foreground m-0 mb-4 text-lg font-semibold">Key Signature</h3>
             <div>
               <select
                 value={selectedKey}
                 onChange={(e) => setSelectedKey(e.target.value)}
-                className="w-full p-4 rounded-lg border-2 border-gray-300 bg-background text-foreground text-base cursor-pointer transition-all duration-200 hover:border-primary focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                className="bg-background text-foreground hover:border-primary focus:border-primary focus:ring-primary/10 w-full cursor-pointer rounded-lg border-2 border-gray-300 p-4 text-base transition-all duration-200 focus:ring-4 focus:outline-none"
               >
                 <option value="C">C/Am (0♯/♭)</option>
                 <option value="G">G/Em (1♯)</option>
@@ -162,14 +157,14 @@ function App() {
           </div>
 
           <div className="mb-8">
-            <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Chord Detection</h3>
+            <h3 className="text-foreground m-0 mb-4 text-lg font-semibold">Chord Detection</h3>
             <div>
-              <label className="flex items-center gap-4 text-base text-foreground cursor-pointer select-none">
+              <label className="text-foreground flex cursor-pointer items-center gap-4 text-base select-none">
                 <input
                   type="checkbox"
                   checked={enforceRootNote}
                   onChange={(e) => setEnforceRootNote(e.target.checked)}
-                  className="w-5 h-5 accent-primary cursor-pointer"
+                  className="accent-primary h-5 w-5 cursor-pointer"
                 />
                 Enforce Root Note
               </label>
@@ -177,18 +172,18 @@ function App() {
           </div>
 
           <div className="mb-8">
-            <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">MIDI Device</h3>
+            <h3 className="text-foreground m-0 mb-4 text-lg font-semibold">MIDI Device</h3>
             <div>
               <button
                 onClick={() => setIsDeviceSelectorOpen(!isDeviceSelectorOpen)}
-                className={`w-full p-4 bg-primary border-none rounded-lg text-white font-medium text-base cursor-pointer transition-all duration-200 text-left relative hover:bg-primary-dark after:content-[''] after:absolute after:right-4 after:top-1/2 after:-translate-y-1/2 after:w-0 after:h-0 after:border-l-[6px] after:border-l-transparent after:border-r-[6px] after:border-r-transparent after:border-t-[6px] after:border-t-white after:transition-transform after:duration-200 ${isDeviceSelectorOpen ? 'after:rotate-180' : ''}`}
+                className={`bg-primary hover:bg-primary-dark relative w-full cursor-pointer rounded-lg border-none p-4 text-left text-base font-medium text-white transition-all duration-200 after:absolute after:top-1/2 after:right-4 after:h-0 after:w-0 after:-translate-y-1/2 after:border-t-[6px] after:border-r-[6px] after:border-l-[6px] after:border-t-white after:border-r-transparent after:border-l-transparent after:transition-transform after:duration-200 after:content-[''] ${isDeviceSelectorOpen ? "after:rotate-180" : ""}`}
               >
                 {getSelectedDeviceName()}
               </button>
               {isDeviceSelectorOpen && (
-                <div className="mt-2 bg-background rounded-lg overflow-hidden shadow-sm">
+                <div className="bg-background mt-2 overflow-hidden rounded-lg shadow-sm">
                   {midiDevices.length > 0 ? (
-                    <ul className="list-none m-0 p-0">
+                    <ul className="m-0 list-none p-0">
                       {midiDevices.map((device) => (
                         <li
                           key={device.index}
@@ -196,7 +191,7 @@ function App() {
                             handleDeviceClick(device.index);
                             setIsMenuOpen(false);
                           }}
-                          className={`p-4 cursor-pointer transition-colors duration-200 border-b border-gray-300 last:border-b-0 ${selectedDeviceIndex === device.index ? "bg-primary text-white font-semibold" : "text-foreground hover:bg-gray-100"}`}
+                          className={`cursor-pointer border-b border-gray-300 p-4 transition-colors duration-200 last:border-b-0 ${selectedDeviceIndex === device.index ? "bg-primary font-semibold text-white" : "text-foreground hover:bg-gray-100"}`}
                         >
                           {device.name}
                         </li>
@@ -210,66 +205,98 @@ function App() {
             </div>
           </div>
 
-          {error && <div className="p-4 bg-error/10 text-error rounded-lg border-l-4 border-error text-sm">{error}</div>}
+          {error && (
+            <div className="bg-error/10 text-error border-error rounded-lg border-l-4 p-4 text-sm">{error}</div>
+          )}
         </div>
       </div>
 
-      <header className="flex items-center justify-between px-6 h-16 bg-gradient-to-br from-primary to-primary-dark text-white shadow-md z-50 max-[900px]:hidden max-h-[550px]:hidden">
-        <h1 className="text-2xl font-semibold tracking-wide m-0">tauri-chordie</h1>
+      {/* Header - hidden in compact mode */}
+      <header className="hide-compact from-primary to-primary-dark z-50 flex h-16 items-center justify-between bg-gradient-to-br px-6 text-white shadow-md">
+        <h1 className="m-0 text-2xl font-semibold tracking-wide">tauri-chordie</h1>
         <div className="flex items-center gap-6">
           <div className="flex items-center">
-            <label className="flex items-center gap-2 text-white font-medium select-none">
+            <label className="flex items-center gap-2 font-medium text-white select-none">
               <input
                 type="checkbox"
                 checked={enforceRootNote}
                 onChange={(e) => setEnforceRootNote(e.target.checked)}
-                className="w-[18px] h-[18px] accent-secondary cursor-pointer"
+                className="accent-secondary h-[18px] w-[18px] cursor-pointer"
               />
               Enforce Root Note
             </label>
           </div>
           <div className="flex items-center">
-            <label className="flex items-center gap-2 text-white font-medium select-none">
+            <label className="flex items-center gap-2 font-medium text-white select-none">
               Key:
               <select
                 value={selectedKey}
                 onChange={(e) => setSelectedKey(e.target.value)}
-                className="py-1 px-2 rounded border-2 border-white/30 bg-white/20 text-white font-medium cursor-pointer transition-all duration-200 hover:bg-white/25 hover:border-white/40 focus:outline-none focus:ring-4 focus:ring-white/30"
+                className="cursor-pointer rounded border-2 border-white/30 bg-white/20 px-2 py-1 font-medium text-white transition-all duration-200 hover:border-white/40 hover:bg-white/25 focus:ring-4 focus:ring-white/30 focus:outline-none"
               >
-                <option value="C" className="bg-card text-foreground">C/Am (0♯/♭)</option>
-                <option value="G" className="bg-card text-foreground">G/Em (1♯)</option>
-                <option value="D" className="bg-card text-foreground">D/Bm (2♯)</option>
-                <option value="A" className="bg-card text-foreground">A/F#m (3♯)</option>
-                <option value="E" className="bg-card text-foreground">E/C#m (4♯)</option>
-                <option value="B" className="bg-card text-foreground">B/G#m (5♯)</option>
-                <option value="F#" className="bg-card text-foreground">F#/D#m (6♯)</option>
-                <option value="Gb" className="bg-card text-foreground">Gb/Ebm (6♭)</option>
-                <option value="Db" className="bg-card text-foreground">Db/Bbm (5♭)</option>
-                <option value="Ab" className="bg-card text-foreground">Ab/Fm (4♭)</option>
-                <option value="Eb" className="bg-card text-foreground">Eb/Cm (3♭)</option>
-                <option value="Bb" className="bg-card text-foreground">Bb/Gm (2♭)</option>
-                <option value="F" className="bg-card text-foreground">F/Dm (1♭)</option>
+                <option value="C" className="bg-card text-foreground">
+                  C/Am (0♯/♭)
+                </option>
+                <option value="G" className="bg-card text-foreground">
+                  G/Em (1♯)
+                </option>
+                <option value="D" className="bg-card text-foreground">
+                  D/Bm (2♯)
+                </option>
+                <option value="A" className="bg-card text-foreground">
+                  A/F#m (3♯)
+                </option>
+                <option value="E" className="bg-card text-foreground">
+                  E/C#m (4♯)
+                </option>
+                <option value="B" className="bg-card text-foreground">
+                  B/G#m (5♯)
+                </option>
+                <option value="F#" className="bg-card text-foreground">
+                  F#/D#m (6♯)
+                </option>
+                <option value="Gb" className="bg-card text-foreground">
+                  Gb/Ebm (6♭)
+                </option>
+                <option value="Db" className="bg-card text-foreground">
+                  Db/Bbm (5♭)
+                </option>
+                <option value="Ab" className="bg-card text-foreground">
+                  Ab/Fm (4♭)
+                </option>
+                <option value="Eb" className="bg-card text-foreground">
+                  Eb/Cm (3♭)
+                </option>
+                <option value="Bb" className="bg-card text-foreground">
+                  Bb/Gm (2♭)
+                </option>
+                <option value="F" className="bg-card text-foreground">
+                  F/Dm (1♭)
+                </option>
               </select>
             </label>
           </div>
           <div className="relative">
             <button
               onClick={() => setIsDeviceSelectorOpen(!isDeviceSelectorOpen)}
-              className={`flex items-center justify-between py-2 px-4 min-w-[200px] bg-white/20 border-2 border-white/30 rounded-lg text-white font-medium cursor-pointer transition-all duration-200 shadow-sm hover:bg-white/25 hover:border-white/40 hover:shadow-md focus:outline-none focus:ring-4 focus:ring-white/50 after:content-[''] after:w-0 after:h-0 after:border-l-[6px] after:border-l-transparent after:border-r-[6px] after:border-r-transparent after:border-t-[6px] after:border-t-white after:transition-transform after:duration-200 after:ml-4 ${isDeviceSelectorOpen ? 'after:rotate-180' : ''}`}
+              className={`flex min-w-[200px] cursor-pointer items-center justify-between rounded-lg border-2 border-white/30 bg-white/20 px-4 py-2 font-medium text-white shadow-sm transition-all duration-200 after:ml-4 after:h-0 after:w-0 after:border-t-[6px] after:border-r-[6px] after:border-l-[6px] after:border-t-white after:border-r-transparent after:border-l-transparent after:transition-transform after:duration-200 after:content-[''] hover:border-white/40 hover:bg-white/25 hover:shadow-md focus:ring-4 focus:ring-white/50 focus:outline-none ${isDeviceSelectorOpen ? "after:rotate-180" : ""}`}
               aria-expanded={isDeviceSelectorOpen}
               aria-controls="midi-device-list-popup"
             >
               {getSelectedDeviceName()}
             </button>
             {isDeviceSelectorOpen && (
-              <div id="midi-device-list-popup" className="absolute top-[calc(100%+8px)] right-0 bg-card rounded-lg w-full min-w-[250px] max-h-[400px] overflow-y-auto shadow-lg z-[100]">
+              <div
+                id="midi-device-list-popup"
+                className="bg-card absolute top-[calc(100%+8px)] right-0 z-[100] max-h-[400px] w-full min-w-[250px] overflow-y-auto rounded-lg shadow-lg"
+              >
                 {midiDevices.length > 0 ? (
                   <ul className="list-none">
                     {midiDevices.map((device) => (
                       <li
                         key={device.index}
                         onClick={() => handleDeviceClick(device.index)}
-                        className={`p-4 block cursor-pointer transition-colors duration-200 border-b border-gray-200 last:border-b-0 ${selectedDeviceIndex === device.index ? "bg-primary text-white font-medium" : "text-foreground hover:bg-gray-100"}`}
+                        className={`block cursor-pointer border-b border-gray-200 p-4 transition-colors duration-200 last:border-b-0 ${selectedDeviceIndex === device.index ? "bg-primary font-medium text-white" : "text-foreground hover:bg-gray-100"}`}
                         role="option"
                         aria-selected={selectedDeviceIndex === device.index}
                       >
@@ -286,17 +313,31 @@ function App() {
         </div>
       </header>
 
-      <main className="flex flex-col items-center justify-center p-4 overflow-hidden bg-background h-[calc(100vh-var(--header-height))] min-h-0 max-[900px]:h-screen max-h-[550px]:h-screen max-[900px]:p-0 max-h-[550px]:p-0">
-        {error && <p className="w-full max-w-[800px] mb-6 p-4 rounded-lg text-[0.95rem] shadow-sm text-center bg-error/5 text-error border-l-4 border-error max-[900px]:hidden max-h-[550px]:hidden">{error}</p>}
-        {selectedDeviceIndex === null && !error && midiDevices.length > 0 && (
-           <p className="w-full max-w-[800px] mb-6 p-4 rounded-lg text-[0.95rem] shadow-sm text-center bg-primary/5 text-primary border-l-4 border-primary max-[900px]:hidden max-h-[550px]:hidden">Please select a MIDI device to start</p>
+      {/* Main content area - responsive layout */}
+      <main className="bg-background compact:h-screen compact:w-screen compact:p-0 compact-h:h-screen compact-h:w-screen compact-h:p-0 flex h-[calc(100vh-var(--header-height))] min-h-0 flex-col items-center justify-center overflow-hidden p-4">
+        {/* Error message - hidden in compact mode */}
+        {error && (
+          <p className="hide-compact bg-error/5 text-error border-error mb-6 w-full max-w-[800px] rounded-lg border-l-4 p-4 text-center text-[0.95rem] shadow-sm">
+            {error}
+          </p>
         )}
 
-        <div className="w-full max-w-[1000px] h-full flex flex-col items-center justify-center gap-6 min-h-0 flex-1 max-[900px]:w-full max-[900px]:h-full max-[900px]:p-6 max-[900px]:pt-[calc(48px+1.5rem+1rem)] max-h-[550px]:w-full max-h-[550px]:h-full max-h-[550px]:p-6 max-h-[550px]:pt-[calc(48px+1.5rem+1rem)] max-[900px]:gap-4 max-h-[550px]:gap-4 max-[900px]:max-w-none max-h-[550px]:max-w-none max-[768px]:p-4 max-[768px]:pt-[calc(48px+1rem+0.5rem)] max-[480px]:p-2 max-[480px]:pt-[calc(44px+0.5rem+0.25rem)] max-[480px]:gap-2">
-          <div className="w-full flex-1 min-h-0 bg-card p-6 rounded-2xl shadow-md flex items-center justify-center overflow-hidden max-[900px]:p-4 max-h-[550px]:p-4 max-[768px]:p-2 max-[480px]:p-1">
+        {/* Info message - hidden in compact mode */}
+        {selectedDeviceIndex === null && !error && midiDevices.length > 0 && (
+          <p className="hide-compact bg-primary/5 text-primary border-primary mb-6 w-full max-w-[800px] rounded-lg border-l-4 p-4 text-center text-[0.95rem] shadow-sm">
+            Please select a MIDI device to start
+          </p>
+        )}
+
+        {/* Content container - responsive spacing and sizing */}
+        <div className="compact:w-screen compact:h-screen compact:max-w-none compact:gap-0 compact:p-4 compact:pt-[calc(3rem+1rem)] compact-h:w-screen compact-h:h-screen compact-h:max-w-none compact-h:gap-0 compact-h:p-4 compact-h:pt-[calc(3rem+1rem)] mobile:pt-[calc(2.75rem+0.5rem)] flex h-full min-h-0 w-full max-w-[1000px] flex-1 flex-col items-center justify-center gap-6">
+          {/* Staff display card - responsive padding */}
+          <div className="bg-card compact:rounded-none compact:shadow-none compact:flex-[2] compact:p-4 compact-h:rounded-none compact-h:shadow-none compact-h:flex-[2] compact-h:p-4 tablet:p-3 mobile:p-2 flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden rounded-2xl p-6 shadow-md">
             <StaffDisplay heldNotes={heldNotes} musicalKey={selectedKey as MusicalKey} />
           </div>
-          <div className="h-[60px] min-h-[60px] w-full flex justify-center items-center shrink-0 max-[900px]:h-auto max-[900px]:min-h-[60px] max-[900px]:py-4 max-h-[550px]:h-auto max-h-[550px]:min-h-[60px] max-h-[550px]:py-4 max-[480px]:min-h-[50px] max-[480px]:py-2">
+
+          {/* Chord display area - responsive height */}
+          <div className="compact:h-auto compact:flex-1 compact:min-h-[80px] compact:bg-card compact-h:h-auto compact-h:flex-1 compact-h:min-h-[80px] compact-h:bg-card mobile:min-h-[70px] flex h-[60px] min-h-[60px] w-full shrink-0 items-center justify-center">
             <ChordDisplay chordText={detectedChordString} />
           </div>
         </div>
