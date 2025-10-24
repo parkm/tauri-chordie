@@ -106,6 +106,26 @@ describe("ChordDetector", () => {
     });
   });
 
+  describe("detectChord - 9 Chords", () => {
+    it("detects A minor 11", () => {
+      testChord(["A3", "B3", "C4", "E4", "G4"], "Am9");
+      testChord(["A3", "C4", "E4", "G4", "B4"], "Am9");
+    });
+  });
+
+  describe("detectChord - 11 Chords", () => {
+    it("detects A minor 11", () => {
+      testChord(["A3", "C4", "D4", "E4", "G4", "B4"], "Am11");
+      testChord(["A3", "C4", "E4", "G4", "B4", "D5"], "Am11");
+    });
+  });
+
+  describe("detectChord - 13 Chords", () => {
+    it("detects C13", () => {
+      testChord(["C4", "E4", "A4", "Bb4", "D5"], "C13");
+    });
+  });
+
   describe("detectChord - Single Notes", () => {
     it("detects single note C", () => {
       testChord(["C4"], "C");
