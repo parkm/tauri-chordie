@@ -11,7 +11,7 @@ interface StaffDisplayProps {
 // And how to spell notes NOT in the key (with appropriate accidentals)
 const NOTE_SPELLING: Record<MusicalKey, Record<number, string>> = {
   // C Major: C(0) D(2) E(4) F(5) G(7) A(9) B(11)
-  C: { 0: "C", 1: "C#", 2: "D", 3: "D#", 4: "E", 5: "F", 6: "F#", 7: "G", 8: "G#", 9: "A", 10: "A#", 11: "B" },
+  C: { 0: "C", 1: "Db", 2: "D", 3: "Eb", 4: "E", 5: "F", 6: "Gb", 7: "G", 8: "Ab", 9: "A", 10: "Bb", 11: "B" },
 
   // G Major: G(7) A(9) B(11) C(0) D(2) E(4) F#(6) - F# is in key, so pitch 6 = "F" (no accidental)
   G: { 0: "C", 1: "C#", 2: "D", 3: "D#", 4: "E", 5: "Fn", 6: "F", 7: "G", 8: "G#", 9: "A", 10: "A#", 11: "B" },

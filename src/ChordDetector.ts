@@ -33,7 +33,7 @@ const NOTE_NAMES_FLAT: { [key: number]: string } = {
 };
 
 // Keys that use flats
-const FLAT_KEYS = ["F", "Bb", "Eb", "Ab", "Db", "Gb"];
+const FLAT_KEYS = ["C", "F", "Bb", "Eb", "Ab", "Db", "Gb"];
 
 // Get the appropriate note names based on key
 function getNoteNames(key?: string): { [key: number]: string } {

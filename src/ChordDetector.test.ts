@@ -152,7 +152,7 @@ describe("ChordDetector", () => {
   describe("detectChord - Slash Chords with Key Signature", () => {
     it("uses flats in slash chords for flat keys", () => {
       testChord(["Bb2", "D4", "F4", "A4"], "Bbmaj7", { key: "Bb" });
-      testChord(["Bb2", "D4", "F4", "A4"], "A#maj7", { key: "C" });
+      testChord(["Bb2", "D4", "F4", "A4"], "A#maj7", { key: "G" });
     });
 
     it("uses sharps in slash chords for sharp keys", () => {
@@ -162,12 +162,12 @@ describe("ChordDetector", () => {
 
     it("handles slash chord with flat spelling", () => {
       testChord(["Gb2", "Bb3", "Db4", "F4"], "Gbmaj7", { key: "Gb" });
-      testChord(["Gb2", "Bb3", "Db4", "F4"], "F#maj7", { key: "C" });
+      testChord(["Gb2", "Bb3", "Db4", "F4"], "F#maj7", { key: "G" });
     });
 
     it("detects slash chord with flat spelling (first inversion)", () => {
       testChord(["Bb3", "Eb4", "G4"], "Eb/Bb", { key: "Eb" });
-      testChord(["Bb3", "Eb4", "G4"], "D#/A#", { key: "C" });
+      testChord(["Bb3", "Eb4", "G4"], "D#/A#", { key: "G" });
     });
 
     it("detects slash chord with sharp spelling (first inversion)", () => {
