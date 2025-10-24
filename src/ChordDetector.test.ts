@@ -124,6 +124,169 @@ describe("ChordDetector", () => {
     it("detects C13", () => {
       testChord(["C4", "E4", "A4", "Bb4", "D5"], "C13");
     });
+
+    it("detects Dm13", () => {
+      testChord(["D4", "F4", "B4", "C5", "E5"], "Dm13");
+    });
+  });
+
+  describe("detectChord - Suspended Chords", () => {
+    it("detects Csus4", () => {
+      testChord(["C4", "F4", "G4"], "Csus4");
+    });
+
+    it("detects Dsus2", () => {
+      testChord(["D4", "E4", "A4"], "Dsus2");
+    });
+
+    it("detects G7sus4", () => {
+      testChord(["G3", "C4", "D4", "F4"], "G7sus4");
+    });
+
+    it("detects A7sus2", () => {
+      testChord(["A3", "B3", "E4", "G4"], "A7sus2");
+    });
+  });
+
+  describe("detectChord - Add Chords (without 7th)", () => {
+    it("detects Cadd9", () => {
+      testChord(["C4", "D4", "E4", "G4"], "Cadd9");
+    });
+
+    it("detects Dm(add9)", () => {
+      testChord(["D4", "E4", "F4", "A4"], "Dm(add9)");
+    });
+
+    it("detects Cadd11", () => {
+      testChord(["C4", "E4", "F4", "G4"], "Cadd11");
+    });
+
+    it("detects Am(add11)", () => {
+      testChord(["A3", "C4", "D4", "E4"], "Am(add11)");
+    });
+  });
+
+  describe("detectChord - 6th and 6/9 Chords", () => {
+    it("detects C6", () => {
+      testChord(["C4", "E4", "G4", "A4"], "C6");
+    });
+
+    it("detects Am6", () => {
+      testChord(["A3", "C4", "E4", "F#4"], "Am6");
+    });
+
+    it("detects C6/9", () => {
+      testChord(["C4", "D4", "E4", "G4", "A4"], "C6/9");
+    });
+
+    it("detects Dm6/9", () => {
+      testChord(["D4", "E4", "F4", "A4", "B4"], "Dm6/9");
+    });
+  });
+
+  describe("detectChord - Altered Dominant Chords", () => {
+    it("detects G7b5", () => {
+      testChord(["G3", "B3", "Db4", "F4"], "G7b5");
+    });
+
+    it("detects C7#5", () => {
+      testChord(["C4", "E4", "G#4", "Bb4"], "C7#5");
+    });
+
+    it("detects D7b9", () => {
+      testChord(["D4", "F#4", "A4", "C5", "Eb5"], "D7b9");
+    });
+
+    it("detects E7#9", () => {
+      testChord(["E4", "G#4", "B4", "D5", "G5"], "E7#9");
+    });
+
+    it("detects G7#11", () => {
+      testChord(["G3", "B3", "D4", "F4", "C#5"], "G7#11");
+    });
+  });
+
+  describe("detectChord - Diminished and Half-Diminished", () => {
+    it("detects Bdim", () => {
+      testChord(["B3", "D4", "F4"], "Bdim");
+    });
+
+    it("detects Bdim7 (enharmonic with Ddim7, Fdim7, Abdim7)", () => {
+      // Diminished 7th chords are symmetrical - any note can be the root
+      // The detector may choose any of the enharmonic equivalents
+      const result = detectChord(midiNotes("B3", "D4", "F4", "Ab4"), false);
+      expect(["Bdim7", "Ddim7", "Fdim7", "Abdim7"]).toContain(result);
+    });
+
+    it("detects Bm7b5 (half-diminished)", () => {
+      testChord(["B3", "D4", "F4", "A4"], "Bm7b5");
+    });
+
+    it("detects F#dim7 (enharmonic with Adim7, Cdim7, Ebdim7)", () => {
+      // Diminished 7th chords are symmetrical - any note can be the root
+      const result = detectChord(midiNotes("F#4", "A4", "C5", "Eb5"), false);
+      expect(["F#dim7", "Adim7", "Cdim7", "Ebdim7", "Gbdim7"]).toContain(result);
+    });
+  });
+
+  describe("detectChord - Augmented Chords", () => {
+    it("detects Caug", () => {
+      testChord(["C4", "E4", "G#4"], "Caug");
+    });
+
+    it("detects Ebaug", () => {
+      testChord(["Eb4", "G4", "B4"], "Ebaug", { key: "Eb" });
+    });
+
+    it("detects C7#5 (augmented 7th)", () => {
+      testChord(["C4", "E4", "G#4", "Bb4"], "C7#5");
+    });
+
+    it("detects Cmaj7#5", () => {
+      testChord(["C4", "E4", "G#4", "B4"], "Cmaj7#5");
+    });
+  });
+
+  describe("detectChord - Power Chords", () => {
+    it("detects C5 (power chord)", () => {
+      testChord(["C3", "G3"], "C5");
+    });
+
+    it("detects E5 (power chord)", () => {
+      testChord(["E2", "B2"], "E5");
+    });
+  });
+
+  describe("detectChord - Complex Voicings", () => {
+    it("detects Cmaj9 (full voicing)", () => {
+      testChord(["C4", "E4", "G4", "B4", "D5"], "Cmaj9");
+    });
+
+    it("detects Gmaj7#11", () => {
+      testChord(["G3", "B3", "D4", "F#4", "C#5"], "Gmaj7#11");
+    });
+
+    it("detects Cmaj7 without 5th", () => {
+      testChord(["C4", "E4", "B4"], "Cmaj7");
+    });
+
+    it("detects Em9 without 5th", () => {
+      testChord(["E4", "G4", "D5", "F#5"], "Em9");
+    });
+
+    it("detects Em7b5 (can also be interpreted as Gm6/E)", () => {
+      testChord(["E4", "G4", "Bb4", "D5"], "Em7b5");
+    });
+  });
+
+  describe("detectChord - Minor Major 7th", () => {
+    it("detects Cm(maj7)", () => {
+      testChord(["C4", "Eb4", "G4", "B4"], "Cm(maj7)");
+    });
+
+    it("detects Am(maj9)", () => {
+      testChord(["A3", "C4", "E4", "G#4", "B4"], "Am(maj9)");
+    });
   });
 
   describe("detectChord - Single Notes", () => {

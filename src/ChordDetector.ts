@@ -64,64 +64,88 @@ const CHORD_DATABASE: ChordDefinition[] = [
   { intervals: [0, 2, 7], symbol: "sus2", name: "Suspended 2nd", priority: 950, requiresAll: true },
 
   // === SEVENTH CHORDS ===
+  { intervals: [0, 4, 11], symbol: "maj7", name: "Major 7th (no 5th)", priority: 900, requiresAll: true },
   { intervals: [0, 4, 7, 11], symbol: "maj7", name: "Major 7th", priority: 900, requiresAll: true },
   { intervals: [0, 4, 7, 10], symbol: "7", name: "Dominant 7th", priority: 900, requiresAll: true },
   { intervals: [0, 3, 7, 10], symbol: "m7", name: "Minor 7th", priority: 900, requiresAll: true },
   { intervals: [0, 3, 7, 11], symbol: "m(maj7)", name: "Minor Major 7th", priority: 850, requiresAll: true },
-  { intervals: [0, 3, 6, 10], symbol: "m7b5", name: "Half Diminished", priority: 850, requiresAll: true },
+  { intervals: [0, 3, 6, 10], symbol: "m7b5", name: "Half Diminished", priority: 920, requiresAll: true },
   { intervals: [0, 3, 6, 9], symbol: "dim7", name: "Diminished 7th", priority: 850, requiresAll: true },
-  { intervals: [0, 4, 8, 10], symbol: "aug7", name: "Augmented 7th", priority: 800, requiresAll: true },
-  { intervals: [0, 4, 8, 11], symbol: "maj7#5", name: "Major 7th Sharp 5", priority: 800, requiresAll: true },
-  { intervals: [0, 5, 7, 10], symbol: "7sus4", name: "7th Suspended 4th", priority: 750, requiresAll: true },
-  { intervals: [0, 2, 7, 10], symbol: "7sus2", name: "7th Suspended 2nd", priority: 750, requiresAll: true },
+  { intervals: [0, 4, 8, 10], symbol: "7#5", name: "Augmented 7th", priority: 870, requiresAll: true },
+  { intervals: [0, 4, 8, 11], symbol: "maj7#5", name: "Major 7th Sharp 5", priority: 870, requiresAll: true },
+  { intervals: [0, 5, 7, 10], symbol: "7sus4", name: "7th Suspended 4th", priority: 870, requiresAll: true },
+  { intervals: [0, 2, 7, 10], symbol: "7sus2", name: "7th Suspended 2nd", priority: 870, requiresAll: true },
 
   // === SIXTH CHORDS ===
-  { intervals: [0, 4, 7, 9], symbol: "6", name: "Major 6th", priority: 850, requiresAll: true },
-  { intervals: [0, 3, 7, 9], symbol: "m6", name: "Minor 6th", priority: 850, requiresAll: true },
-  { intervals: [0, 4, 7, 9, 2], symbol: "6/9", name: "6th Add 9", priority: 800, requiresAll: true },
-  { intervals: [0, 3, 7, 9, 2], symbol: "m6/9", name: "Minor 6th Add 9", priority: 800, requiresAll: true },
+  { intervals: [0, 4, 7, 9], symbol: "6", name: "Major 6th", priority: 910, requiresAll: true },
+  { intervals: [0, 3, 7, 9], symbol: "m6", name: "Minor 6th", priority: 910, requiresAll: true },
+  { intervals: [0, 4, 7, 9, 2], symbol: "6/9", name: "6th Add 9", priority: 890, requiresAll: true },
+  { intervals: [0, 3, 7, 9, 2], symbol: "m6/9", name: "Minor 6th Add 9", priority: 890, requiresAll: true },
 
   // === NINTH CHORDS ===
-  // 9th chords require the 7th to be present
+  // 9th chords require root, 3rd, 7th, and 9th. The 5th can be omitted.
+  { intervals: [0, 4, 10, 2], symbol: "9", name: "Dominant 9th (no 5th)", priority: 880, requiresAll: true },
   { intervals: [0, 4, 7, 10, 2], symbol: "9", name: "Dominant 9th", priority: 880, requiresAll: false },
+  { intervals: [0, 4, 11, 2], symbol: "maj9", name: "Major 9th (no 5th)", priority: 880, requiresAll: true },
   { intervals: [0, 4, 7, 11, 2], symbol: "maj9", name: "Major 9th", priority: 880, requiresAll: false },
+  { intervals: [0, 3, 10, 2], symbol: "m9", name: "Minor 9th (no 5th)", priority: 880, requiresAll: true },
   { intervals: [0, 3, 7, 10, 2], symbol: "m9", name: "Minor 9th", priority: 880, requiresAll: false },
+  { intervals: [0, 3, 11, 2], symbol: "m(maj9)", name: "Minor Major 9th (no 5th)", priority: 870, requiresAll: true },
   { intervals: [0, 3, 7, 11, 2], symbol: "m(maj9)", name: "Minor Major 9th", priority: 870, requiresAll: false },
+  { intervals: [0, 4, 10, 1], symbol: "7b9", name: "7th Flat 9 (no 5th)", priority: 860, requiresAll: true },
   { intervals: [0, 4, 7, 10, 1], symbol: "7b9", name: "7th Flat 9", priority: 860, requiresAll: false },
+  { intervals: [0, 4, 10, 3], symbol: "7#9", name: "7th Sharp 9 (no 5th)", priority: 860, requiresAll: true },
   { intervals: [0, 4, 7, 10, 3], symbol: "7#9", name: "7th Sharp 9", priority: 860, requiresAll: false },
 
   // === ELEVENTH CHORDS ===
-  // 11th chords require the 7th to be present (with or without 9th)
+  // 11th chords require root, 7th, and 11th. The 3rd, 5th, and 9th can be omitted.
   { intervals: [0, 4, 7, 10, 2, 5], symbol: "11", name: "11th", priority: 850, requiresAll: false },
   { intervals: [0, 3, 7, 10, 2, 5], symbol: "m11", name: "Minor 11th", priority: 850, requiresAll: false },
+  { intervals: [0, 4, 10, 5], symbol: "11", name: "11th (no 5th, no 9th)", priority: 850, requiresAll: true },
+  { intervals: [0, 3, 10, 5], symbol: "m11", name: "Minor 11th (no 5th, no 9th)", priority: 850, requiresAll: true },
   { intervals: [0, 4, 7, 10, 5], symbol: "11", name: "11th (no 9)", priority: 850, requiresAll: false },
   { intervals: [0, 3, 7, 10, 5], symbol: "m11", name: "Minor 11th (no 9)", priority: 850, requiresAll: false },
   { intervals: [0, 4, 7, 11, 2, 5], symbol: "maj11", name: "Major 11th", priority: 850, requiresAll: false },
+  { intervals: [0, 4, 11, 5], symbol: "maj11", name: "Major 11th (no 5th, no 9th)", priority: 850, requiresAll: true },
   { intervals: [0, 4, 7, 11, 5], symbol: "maj11", name: "Major 11th (no 9)", priority: 850, requiresAll: false },
-  { intervals: [0, 4, 7, 10, 6], symbol: "7#11", name: "7th Sharp 11", priority: 580, requiresAll: false },
-  { intervals: [0, 4, 7, 11, 6], symbol: "maj7#11", name: "Major 7th Sharp 11", priority: 580, requiresAll: false },
+  { intervals: [0, 4, 10, 6], symbol: "7#11", name: "7th Sharp 11 (no 5th)", priority: 860, requiresAll: true },
+  { intervals: [0, 4, 7, 10, 6], symbol: "7#11", name: "7th Sharp 11", priority: 860, requiresAll: false },
+  {
+    intervals: [0, 4, 11, 6],
+    symbol: "maj7#11",
+    name: "Major 7th Sharp 11 (no 5th)",
+    priority: 860,
+    requiresAll: true,
+  },
+  { intervals: [0, 4, 7, 11, 6], symbol: "maj7#11", name: "Major 7th Sharp 11", priority: 860, requiresAll: false },
 
   // === THIRTEENTH CHORDS ===
-  // 13th chords require the 7th to be present (with or without 9th and 11th)
+  // 13th chords require root, 3rd, 7th, and 13th. The 5th, 9th, and 11th can be omitted.
+  { intervals: [0, 4, 10, 9], symbol: "13", name: "13th (no 5th, no 9th)", priority: 840, requiresAll: true },
+  { intervals: [0, 3, 10, 9], symbol: "m13", name: "Minor 13th (no 5th, no 9th)", priority: 840, requiresAll: true },
   { intervals: [0, 4, 7, 10, 2, 9], symbol: "13", name: "13th", priority: 840, requiresAll: false },
   { intervals: [0, 3, 7, 10, 2, 9], symbol: "m13", name: "Minor 13th", priority: 840, requiresAll: false },
   { intervals: [0, 4, 7, 10, 9], symbol: "13", name: "13th (no 9)", priority: 840, requiresAll: false },
   { intervals: [0, 3, 7, 10, 9], symbol: "m13", name: "Minor 13th (no 9)", priority: 840, requiresAll: false },
+  { intervals: [0, 4, 10, 2, 9], symbol: "13", name: "13th (no 5th)", priority: 840, requiresAll: true },
+  { intervals: [0, 3, 10, 2, 9], symbol: "m13", name: "Minor 13th (no 5th)", priority: 840, requiresAll: true },
+  { intervals: [0, 4, 11, 9], symbol: "maj13", name: "Major 13th (no 5th, no 9th)", priority: 840, requiresAll: true },
   { intervals: [0, 4, 7, 11, 2, 9], symbol: "maj13", name: "Major 13th", priority: 840, requiresAll: false },
   { intervals: [0, 4, 7, 11, 9], symbol: "maj13", name: "Major 13th (no 9)", priority: 840, requiresAll: false },
+  { intervals: [0, 4, 10, 8], symbol: "7b13", name: "7th Flat 13 (no 5th)", priority: 820, requiresAll: true },
   { intervals: [0, 4, 7, 10, 8], symbol: "7b13", name: "7th Flat 13", priority: 820, requiresAll: false },
 
   // === ADD CHORDS ===
-  { intervals: [0, 4, 7, 2], symbol: "add9", name: "Add 9", priority: 500, requiresAll: true },
-  { intervals: [0, 3, 7, 2], symbol: "m(add9)", name: "Minor Add 9", priority: 500, requiresAll: true },
-  { intervals: [0, 4, 7, 5], symbol: "add11", name: "Add 11", priority: 500, requiresAll: true },
-  { intervals: [0, 3, 7, 5], symbol: "m(add11)", name: "Minor Add 11", priority: 500, requiresAll: true },
-  { intervals: [0, 4, 7, 6], symbol: "add#11", name: "Add Sharp 11", priority: 450, requiresAll: true },
+  { intervals: [0, 4, 7, 2], symbol: "add9", name: "Add 9", priority: 950, requiresAll: true },
+  { intervals: [0, 3, 7, 2], symbol: "m(add9)", name: "Minor Add 9", priority: 950, requiresAll: true },
+  { intervals: [0, 4, 7, 5], symbol: "add11", name: "Add 11", priority: 950, requiresAll: true },
+  { intervals: [0, 3, 7, 5], symbol: "m(add11)", name: "Minor Add 11", priority: 950, requiresAll: true },
+  { intervals: [0, 4, 7, 6], symbol: "add#11", name: "Add Sharp 11", priority: 940, requiresAll: true },
 
   // === ALTERED CHORDS ===
-  { intervals: [0, 4, 6, 10], symbol: "7b5", name: "7th Flat 5", priority: 600, requiresAll: true },
-  { intervals: [0, 4, 8, 10], symbol: "7#5", name: "7th Sharp 5", priority: 600, requiresAll: true },
-  { intervals: [0, 3, 6, 10], symbol: "m7b5", name: "Minor 7th Flat 5", priority: 600, requiresAll: true },
+  { intervals: [0, 4, 6, 10], symbol: "7b5", name: "7th Flat 5", priority: 870, requiresAll: true },
+  { intervals: [0, 4, 8, 10], symbol: "7#5", name: "7th Sharp 5", priority: 870, requiresAll: true },
+  { intervals: [0, 3, 6, 10], symbol: "m7b5", name: "Minor 7th Flat 5", priority: 870, requiresAll: true },
 
   // === POWER CHORD (Lowest Priority) ===
   { intervals: [0, 7], symbol: "5", name: "Power Chord", priority: 100, requiresAll: true },
@@ -166,8 +190,11 @@ function analyzeChord(pitchClasses: Set<number>, enforceRootNote: boolean, lowes
       const extraNotes = pcArray.length - matchedIntervals.length;
       const exactness = Math.max(0, 1 - extraNotes * 0.2);
 
+      // Bonus for root matching the lowest note
+      const bassBonus = root === lowestNote ? 1.2 : 1.0;
+
       // Calculate final score
-      const score = coverage * chord.priority * exactness;
+      const score = coverage * chord.priority * exactness * bassBonus;
 
       matches.push({
         root,
@@ -233,7 +260,9 @@ function buildChordName(params: {
 
     if (extensions.length > 0) {
       // Smart extension handling
-      if (extensions.includes("9") && match.chord.symbol.includes("7")) {
+      const has7th = match.chord.symbol.includes("7");
+
+      if (extensions.includes("9") && has7th) {
         // Upgrade 7th to 9th chord
         if (match.chord.symbol === "7") {
           chordName = rootName + "9";
@@ -245,8 +274,14 @@ function buildChordName(params: {
         extensions.splice(extensions.indexOf("9"), 1);
       }
 
+      // Handle extensions without parentheses for specific cases
       if (extensions.length > 0) {
-        chordName += `(${extensions.join(",")})`;
+        // For #11 extensions on 7th chords, show without parentheses
+        if (extensions.length === 1 && extensions[0] === "#11" && has7th) {
+          chordName += "#11";
+        } else {
+          chordName += `(${extensions.join(",")})`;
+        }
       }
     }
   }
@@ -379,9 +414,9 @@ function findBestRoot(pitchClasses: Set<number>, enforceRootNote: boolean, lowes
       }
     }
 
-    // Bonus for being the lowest note
+    // Bonus for being the lowest note (strong preference)
     if (root === lowestNote) {
-      score += 5;
+      score += 15;
     }
 
     if (score > bestScore) {
